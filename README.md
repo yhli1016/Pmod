@@ -148,7 +148,7 @@ A: Doing so will increase the complexity of designing and using this software.
    Moreover, the package management mechanism of Python does not allow
    additional periods ('.') in the file name. So if version is to be included in
    configuration file names, the periods have to be replaced with underscores
-   ('-'). We don't think it a big problem to include all the configurations in
+   ('\_'). We don't think it a big problem to include all the configurations in
    one python file if the number of modules to manage is lower than 100. If you
    do have a lot of modules, and do not like a large configuration file, we
    recommend you the professional environmental module systems like Lmod.
