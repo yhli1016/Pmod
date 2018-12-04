@@ -101,6 +101,8 @@ operations are:
 
 - clean, purge: unload all modules
 
+- reload, update: reload all loaded modules
+
 See modcmd.py for more details.
 
 

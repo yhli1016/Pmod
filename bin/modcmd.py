@@ -38,5 +38,7 @@ elif args.operation in ("unload", "remove", "rm", "delete", "del"):
     mod_manager.unload_mods(mod_name, args.auto)
 elif args.operation in ("clean", "purge"):
     mod_manager.unload_mods(mod_manager.get_mod_names())
+elif args.operation in ("reload", "update"):
+    mod_manager.reload()
 else:
     print_stderr("Undefined operation %s" % args.operation)

@@ -322,7 +322,7 @@ class ModManager(object):
         mod_names = sorted(self.available_mods.keys(), key=str.lower)
         print_table("Available Modules", mod_names, number_items=False)
 
-    def print_mods_status(self, loaded_only=False):
+    def print_mods_status(self, loaded_only=True):
         """
         Print the status of all available modules.
 
@@ -346,8 +346,9 @@ class ModManager(object):
         mods_unloaded = sorted(mods_unloaded, key=str.lower)
 
         print_table("Loaded Modules", mods_loaded)
-        if not loaded_only:
+        if len(mods_broken) != 0:
             print_table("Broken Modules", mods_broken)
+        if not loaded_only:
             print_table("Unloaded Modules", mods_unloaded)
 
     def print_mods_info(self, mod_list):
@@ -451,15 +452,16 @@ class ModManager(object):
             except re.error:
                 print_stderr("Invalid regular expression %s" % pattern)
 
-    def load_mods(self, mod_list, auto=False):
+    def load_mods(self, mod_list, auto=False, reload=False):
         """
         Load a list of modules.
 
         :param mod_list: list of the names of modules
         :param auto: boolean, whether to enable auto mode
+        :param reload: boolean, whether we are reloading modules
         :return: None
         """
-        if not auto and os.environ['PM_AUTO_MODE'] != "1":
+        if reload or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
             mods_to_load = set(mod_list)
             mods_to_unload = set()
         else:
@@ -493,15 +495,16 @@ class ModManager(object):
         for env_name, env_value in new_environ.items():
             print_stdout("export %s=%s;" % (env_name, env_value))
 
-    def unload_mods(self, mod_list, auto=False):
+    def unload_mods(self, mod_list, auto=False, reload=False):
         """
         Unload specified list of modules with their dependencies that are not.
 
         :param mod_list: list of the names of modules
         :param auto: boolean, whether to enable auto mode
+        :param reload: boolean, whether we are reloading modules
         :return: None
         """
-        if not auto and os.environ['PM_AUTO_MODE'] != "1":
+        if reload or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
             mods_to_unload = set(mod_list)
             mods_to_load = set()
         else:
@@ -522,3 +525,14 @@ class ModManager(object):
             print_stdout("%s;" % command)
         for env_name, env_value in new_environ.items():
             print_stdout("export %s=%s;" % (env_name, env_value))
+
+    def reload(self):
+        """
+        Reload all loaded modules. Broken modules will be fixed.
+
+        :return: None
+        """
+        mods_to_load = [mod_name for mod_name in self.available_mods.keys()
+                        if self.available_mods[mod_name].check_status() != -1]
+        self.unload_mods(mods_to_load, reload=True)
+        self.load_mods(mods_to_load, reload=True)
