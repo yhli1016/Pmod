@@ -1,0 +1,162 @@
+import sys
+import os
+from pmod.utilities import print_stderr
+
+
+class Module(object):
+    """
+    Class representing a module.
+
+    Each instance of this class has four lists, namely environ, depend, conflict
+    and command.
+
+    self.environ contains the commands to set environmental variables.
+    Each element in environ is three-element tuple in the form (action, name,
+    pattern), where action should be in ("append", "prepend", "reset"), name is
+    the name of environmental on which the action will be modified, and pattern
+    is the string with which the environmental variable will be modified.
+
+    self.depend contains the dependencies of this module.
+
+    self.conflict contains the conflicting modules.
+
+    self.command contains additional initialization commands.
+    """
+    def __init__(self, mod_name):
+        """
+        :param mod_name: string, name of the module
+        """
+        self.mod_name = mod_name
+        self.environ = [("prepend", "PM_LOADED_MODULES", self.mod_name)]
+        self.depend = []
+        self.conflict = []
+        self.command = []
+
+    def add_settings(self, preset="void", destination=None, environ=None,
+                     depend=None, conflict=None, command=None):
+        """
+        Add settings to this instance.
+
+        :param preset: string, preset elements to be added to self.environ,
+                       should be in ("mod", "path", "lib", "inc", "py", "void")
+        :param destination: string, installation destination of the module
+        :param environ: list of tuples, see the documentation of 'Module' class
+        :param depend: list of strings, dependencies of the module
+        :param conflict: list of strings, conflicting modules of the module
+        :param command: list of strings, additional initialization scripts
+        :return: None
+        """
+        # Add pre-defined items to environ
+        if preset == "mod":
+            self.environ.append(("prepend", "PATH", destination + "/bin"))
+            self.environ.append(("prepend", "LIBRARY_PATH",
+                                 destination + "/lib"))
+            self.environ.append(("prepend", "LD_LIBRARY_PATH",
+                                 destination + "/lib"))
+            self.environ.append(("prepend", "C_INCLUDE_PATH",
+                                 destination + "/include"))
+            self.environ.append(("prepend", "CPLUS_INCLUDE_PATH",
+                                 destination + "/include"))
+        elif preset == "path":
+            self.environ.append(("prepend", "PATH", destination))
+        elif preset == "lib":
+            self. environ.append(("prepend", "LIBRARY_PATH", destination))
+            self.environ.append(("prepend", "LD_LIBRARY_PATH", destination))
+        elif preset == "inc":
+            self.environ.append(("prepend", "C_INCLUDE_PATH", destination))
+            self.environ.append(("prepend", "CPLUS_INCLUDE_PATH", destination))
+        elif preset == "py":
+            self.environ.append(("prepend", "PYTHONPATH", destination))
+        elif preset == "void":
+            pass
+        else:
+            print_stderr("ERROR: undefined module type %s" % preset)
+            sys.exit(-1)
+
+        # Add other items
+        if environ is not None:
+            self.environ.extend(environ)
+        if depend is not None:
+            self.depend.extend(depend)
+        if conflict is not None:
+            self.conflict.extend(conflict)
+        if command is not None:
+            self.command.extend(command)
+
+    def check_environ(self):
+        """
+        Check if there are undefined operations in self.environ
+
+        :return: None
+        """
+        for environ_item in self.environ:
+            if environ_item[0] not in ("append", "prepend", "reset"):
+                print_stderr("ERROR: module %s has undefined operation %s"
+                             % (self.mod_name, environ_item[0]))
+                sys.exit(-1)
+
+    def check_status(self):
+        """
+        Check the status of this module.
+
+        :return: 1 for "loaded", 0 for "broken", -1 for "unloaded"
+        """
+        num_key_total = len(self.environ)
+        num_key_set = 0
+        for environ_item in self.environ:
+            operation, env_name, pattern = environ_item[0], environ_item[1],\
+                                           environ_item[2]
+            if (operation == "reset"
+                and env_name in os.environ.keys()
+                and os.environ[env_name] == pattern):
+                num_key_set += 1
+            elif (operation in ("append", "prepend")
+                and env_name in os.environ.keys()
+                and os.environ[env_name].find(pattern) != -1):
+                num_key_set += 1
+        if num_key_set == num_key_total:
+            return 1
+        elif num_key_set in range(1, num_key_total):
+            return 0
+        else:
+            return -1
+
+    def load(self, new_environ):
+        """
+        Update the environmental settings in new_environ to load this module.
+
+        :param new_environ: dictionary, see the load_mods method of ModManager
+                            class
+        :return: None
+        """
+        for environ_item in self.environ:
+            operation, env_name, pattern = environ_item[0], environ_item[1],\
+                                           environ_item[2]
+            if operation == "reset":
+                new_environ[env_name] = pattern
+            elif (operation == "append"
+                and new_environ[env_name].find(pattern) == -1):
+                new_environ[env_name] = "%s:%s" % (new_environ[env_name],
+                                                   pattern)
+            elif (operation == "prepend"
+                and new_environ[env_name].find(pattern) == -1):
+                new_environ[env_name] = "%s:%s" % (pattern,
+                                                   new_environ[env_name])
+
+    def unload(self, new_environ):
+        """
+        Update the environmental settings in new_environ to unload this module.
+
+        :param new_environ: dictionary, see the unload_mods method of ModManager
+                            class
+        :return: None
+        """
+        for environ_item in self.environ:
+            operation, env_name, pattern = environ_item[0], environ_item[1],\
+                                           environ_item[2]
+            if operation == "reset":
+                new_environ[env_name] = ""
+            elif operation in ("append", "prepend"):
+                new_env_var = new_environ[env_name].replace(pattern+":", "")
+                new_env_var = new_env_var.replace(pattern, "")
+                new_environ[env_name] = new_env_var
