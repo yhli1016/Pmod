@@ -143,6 +143,7 @@ FAQ (in advance)
 ----------------
 Q: Why not separate configuration files into different files organized in many
    directories like that in lmod?
+
 A: Doing so will increase the complexity of designing and using this software.
    Moreover, the package management mechanism of Python does not allow
    additional periods ('.') in the file name. So if version is to be included in
@@ -153,6 +154,7 @@ A: Doing so will increase the complexity of designing and using this software.
    recommend you the professional environmental module systems like Lmod.
 
 Q: How about version management?
+
 A: Version management is supported by pmod, but not directly. For example, if
    module foo has three versions, namely A, B and C, then in the definition of
    foo/A you should declare foo/B and foo/C as conflicting modules. For the
@@ -162,4 +164,5 @@ A: Version management is supported by pmod, but not directly. For example, if
    'module -a load module/B'.
 
 Q: How can I define a meta-module that loads a collection of other modules?
+
 A: Define it as a void module and add all the modules to load as dependencies.
