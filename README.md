@@ -33,7 +33,7 @@ Python 3 are supported. The common installation procedure is as below:
    /opt/pmod as the installation destination. Note that in this case root
    privileges will be required.
 
-2. Edit init/bash.sh to update PM_ROOT to the installation destination of pmod
+2. Edit init/bash.sh to update PM\_ROOT to the installation destination of pmod
    in step 1.
 
 3. Add the command to source init/bash.sh in your ~/.bashrc. If pmod is to be
@@ -135,8 +135,8 @@ When unloading specified targets, the following operations are triggered:
 4. Modules that have dependencies on modules to load are reloaded.
 
 The automatically mode are enabled by either appending '-a' or '--auto' to the
-command-line parameters, or setting the PM_AUTO_MODE environmental variable to 1
-in init/bash.sh. By default it is enabled. Set PM_AUTO_MODE to 0 if you don't
+command-line parameters, or setting the PM\_AUTO\_MODE environmental variable to 1
+in init/bash.sh. By default it is enabled. Set PM\_AUTO\_MODE to 0 if you don't
 like this feature. Keep in mind that the loaded modules may be not usable as it
 seems to be in this case.
 
