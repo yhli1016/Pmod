@@ -108,11 +108,11 @@ class Module(object):
                                            environ_item[2]
             if (operation == "reset"
                 and env_name in os.environ.keys()
-                and os.environ[env_name] == pattern):
+                and pattern in os.environ[env_name].split(":")):
                 num_key_set += 1
             elif (operation in ("append", "prepend")
                 and env_name in os.environ.keys()
-                and os.environ[env_name].find(pattern) != -1):
+                and pattern in os.environ[env_name].split(":")):
                 num_key_set += 1
         if num_key_set == num_key_total:
             return 1
@@ -135,11 +135,11 @@ class Module(object):
             if operation == "reset":
                 new_environ[env_name] = pattern
             elif (operation == "append"
-                and new_environ[env_name].find(pattern) == -1):
+                and pattern not in new_environ[env_name].split(":")):
                 new_environ[env_name] = "%s:%s" % (new_environ[env_name],
                                                    pattern)
             elif (operation == "prepend"
-                and new_environ[env_name].find(pattern) == -1):
+                and pattern not in new_environ[env_name].split(":")):
                 new_environ[env_name] = "%s:%s" % (pattern,
                                                    new_environ[env_name])
 

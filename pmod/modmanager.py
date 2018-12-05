@@ -322,7 +322,7 @@ class ModManager(object):
         mod_names = sorted(self.available_mods.keys(), key=str.lower)
         print_table("Available Modules", mod_names, number_items=False)
 
-    def print_mods_status(self, loaded_only=True):
+    def print_mods_status(self, loaded_only=False):
         """
         Print the status of all available modules.
 
@@ -404,7 +404,7 @@ class ModManager(object):
                     status = False
                 elif (operation in ("append", "prepend")
                       and not (env_name in os.environ.keys()
-                               and os.environ[env_name].find(pattern) != -1)):
+                               and pattern in os.environ[env_name].split(":"))):
                     print_stderr("WARNING: %s not set" % env_name)
                     status = False
             if status:
