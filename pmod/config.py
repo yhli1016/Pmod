@@ -4,8 +4,8 @@ from pmod.modmanager import ModManager
 m = mod_manager = ModManager()
 
 # System
-m.add_mod('usrlocal', preset='lib',
-          destination='/usr/local/lib:/usr/local/lib64')
+m.add_mod('usrlocal', preset='lib', destination='/usr/local/lib')
+m.add_mod('usrlocal', preset='lib', destination='/usr/local/lib64')
 
 # For Intel_Parallel_Studio_XE 2018 update1
 m.add_mod('intel_2018_update1', preset='void',
