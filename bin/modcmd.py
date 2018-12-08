@@ -33,9 +33,9 @@ elif args.operation in ("diagnose", "probe"):
 elif args.operation in ("search",):
     mod_manager.search_mods(mod_name)
 elif args.operation in ("load", "add"):
-    mod_manager.load_mods(mod_name, args.auto)
+    mod_manager.load_mods(mod_name, force_no_auto=False, auto=args.auto)
 elif args.operation in ("unload", "remove", "rm", "delete", "del"):
-    mod_manager.unload_mods(mod_name, args.auto)
+    mod_manager.unload_mods(mod_name, force_no_auto=False, auto=args.auto)
 elif args.operation in ("clean", "purge"):
     mod_manager.unload_mods(mod_manager.get_mod_names())
 elif args.operation in ("reload", "update"):

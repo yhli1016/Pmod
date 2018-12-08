@@ -111,8 +111,8 @@ class Module(object):
                 and pattern in os.environ[env_name].split(":")):
                 num_key_set += 1
             elif (operation in ("append", "prepend")
-                and env_name in os.environ.keys()
-                and pattern in os.environ[env_name].split(":")):
+                  and env_name in os.environ.keys()
+                  and pattern in os.environ[env_name].split(":")):
                 num_key_set += 1
         if num_key_set == num_key_total:
             return 1
@@ -133,15 +133,13 @@ class Module(object):
             operation, env_name, pattern = environ_item[0], environ_item[1],\
                                            environ_item[2]
             if operation == "reset":
-                new_environ[env_name] = pattern
+                new_environ[env_name] = [pattern]
             elif (operation == "append"
-                and pattern not in new_environ[env_name].split(":")):
-                new_environ[env_name] = "%s:%s" % (new_environ[env_name],
-                                                   pattern)
+                  and pattern not in new_environ[env_name]):
+                new_environ[env_name].append(pattern)
             elif (operation == "prepend"
-                and pattern not in new_environ[env_name].split(":")):
-                new_environ[env_name] = "%s:%s" % (pattern,
-                                                   new_environ[env_name])
+                  and pattern not in new_environ[env_name]):
+                new_environ[env_name].insert(0, pattern)
 
     def unload(self, new_environ):
         """
@@ -155,8 +153,7 @@ class Module(object):
             operation, env_name, pattern = environ_item[0], environ_item[1],\
                                            environ_item[2]
             if operation == "reset":
-                new_environ[env_name] = ""
+                new_environ[env_name] = [""]
             elif operation in ("append", "prepend"):
-                new_env_var = new_environ[env_name].replace(pattern+":", "")
-                new_env_var = new_env_var.replace(pattern, "")
-                new_environ[env_name] = new_env_var
+                while pattern in new_environ[env_name]:
+                    new_environ[env_name].remove(pattern)

@@ -85,8 +85,8 @@ class ModManager(object):
 
     def build_environ(self, mod_list):
         """
-        Copy the current values of OS environmental variables to be altered by
-        the modules in mod_list to a new dictionary.
+        Copy and split the current values of OS environmental variables to be
+        altered by the modules in mod_list to a new dictionary.
 
         :param mod_list: list of the names of modules
         :return: dictionary storing the environmental variables
@@ -97,9 +97,9 @@ class ModManager(object):
             for environ_item in module.environ:
                 env_name = environ_item[1]
                 if env_name in os.environ.keys():
-                    new_environ[env_name] = os.environ[env_name]
+                    new_environ[env_name] = os.environ[env_name].split(":")
                 else:
-                    new_environ[env_name] = ""
+                    new_environ[env_name] = [""]
         return new_environ
 
     def build_dependencies(self, mod_list):
@@ -143,7 +143,7 @@ class ModManager(object):
             commands.extend(module.command)
         return set(commands)
 
-    def auto_adjust_load(self, mods_to_unload, mods_to_load):
+    def auto_adjust_load(self, mods_to_unload, mods_to_load, mods_loaded):
         """
         Adjust the modules to unload and to load according to the status of
         already loaded modules when loading specified targets in automatic mode.
@@ -166,11 +166,12 @@ class ModManager(object):
 
         :param mods_to_unload: list of strings, names of the modules to unload
         :param mods_to_load: list or strings, names of the modules to load
+        :param mods_loaded: list of strings, names of loaded modules
         :return: adjusted mods_to_unload and mods_to_load
         """
         # Get the list of loaded modules that have to be checked for
         # usability.
-        mods_loaded = set(self.get_loaded_mods())
+        mods_loaded = set(mods_loaded)
         mods_loaded_copy = mods_loaded.copy()
         mods_loaded_copy = mods_loaded_copy.difference(set(mods_to_unload))
         mods_loaded_copy = mods_loaded_copy.union(set(mods_to_load))
@@ -231,7 +232,7 @@ class ModManager(object):
         return set(mods_to_unload), set(mods_to_load)
 
 
-    def auto_adjust_unload(self, mods_to_unload):
+    def auto_adjust_unload(self, mods_to_unload, mods_to_load, mods_loaded):
         """
         Adjust the modules to unload and to load according to the status of
         already loaded modules when unloading specified targets in automatic
@@ -247,15 +248,17 @@ class ModManager(object):
         4. Modules that have to be reloaded due to dependencies on mods_to_load
            are added to both lists recursively.
 
-        Step 2-3 are identical to that in the 'auto_adjust_load' method. For the
+        Step 2-4 are identical to that in the 'auto_adjust_load' method. For the
         same reason test carefully if you change this piece of code.
 
         :param mods_to_unload: list of strings, names of the modules to unload
+        :param mods_to_load: list or strings, names of the modules to load
+        :param mods_loaded: list of strings, names of loaded modules
         :return: adjusted mods_to_unload and mods_to_load
         """
         # Get the loaded modules to be checked and their dependencies and
         # conflicts.
-        mods_loaded = set(self.get_loaded_mods())
+        mods_loaded = set(mods_loaded)
         mods_check = mods_loaded.difference(set(mods_to_unload))
         dependencies = dict()
         conflicts = dict()
@@ -289,7 +292,6 @@ class ModManager(object):
 
         # 3. Check for modules that have to be reloaded due to conflicts on
         # mods_to_unload.
-        mods_to_load = []
         mods_check_copy = mods_check.copy()
         mods_to_reload = []
         for mod_name in mods_to_unload:
@@ -452,16 +454,17 @@ class ModManager(object):
             except re.error:
                 print_stderr("Invalid regular expression %s" % pattern)
 
-    def load_mods(self, mod_list, auto=False, reload=False):
+    def load_mods(self, mod_list, force_no_auto=False, auto=False):
         """
         Load a list of modules.
 
         :param mod_list: list of the names of modules
+        :param force_no_auto: boolean, whether to force to disable auto mode,
+                              overwrites auto and PM_AUTO_MODE
         :param auto: boolean, whether to enable auto mode
-        :param reload: boolean, whether we are reloading modules
         :return: None
         """
-        if reload or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
+        if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
             mods_to_load = set(mod_list)
             mods_to_unload = set()
         else:
@@ -475,13 +478,31 @@ class ModManager(object):
                                  "dependency and conflicting module" % mod_name)
                 sys.exit(-1)
 
+            # Reload broken modules to simplify the logic flow and to avoid
+            # potential bugs
+            mods_unloaded = []
+            mods_broken = []
+            mods_loaded = []
+            for mod_name, module in self.available_mods.items():
+                status = module.check_status()
+                if status == -1:
+                    mods_unloaded.append(mod_name)
+                elif status == 0:
+                    mods_broken.append(mod_name)
+                else:
+                    mods_loaded.append(mod_name)
+            if len(mods_broken) != 0:
+                self.unload_mods(mods_broken, force_no_auto=True)
+                self.load_mods(mods_broken, force_no_auto=True)
+                mods_loaded.extend(mods_broken)
+
             # Get the lists of modules to unload and to load
             mods_to_unload = [mod_name for mod_name in conflicts
-                          if self.available_mods[mod_name].check_status() != -1]
+                              if mod_name not in mods_unloaded]
             mods_to_load = [mod_name for mod_name in dependencies
-                           if self.available_mods[mod_name].check_status() != 1]
+                            if mod_name not in mods_loaded]
             mods_to_unload, mods_to_load = self.auto_adjust_load(mods_to_unload,
-                                                                 mods_to_load)
+                                                      mods_to_load, mods_loaded)
 
         # Collect settings from each module and echo to stdout
         new_environ = self.build_environ(mods_to_load.union(mods_to_unload))
@@ -490,29 +511,54 @@ class ModManager(object):
             self.available_mods[mod_name].unload(new_environ)
         for mod_name in mods_to_load:
             self.available_mods[mod_name].load(new_environ)
+        for env_name, env_value in new_environ.items():
+            env_string = "".join(["%s:" % pattern for pattern in env_value
+                                      if pattern != ""])
+            if env_string != "" and env_string[-1] == ":":
+                env_string = env_string[:-1]
+            print_stdout("export %s=%s;" % (env_name, env_string))
         for command in commands:
             print_stdout("%s;" % command)
-        for env_name, env_value in new_environ.items():
-            print_stdout("export %s=%s;" % (env_name, env_value))
 
-    def unload_mods(self, mod_list, auto=False, reload=False):
+    def unload_mods(self, mod_list, force_no_auto=False, auto=False):
         """
         Unload specified list of modules with their dependencies that are not.
 
         :param mod_list: list of the names of modules
+        :param force_no_auto: boolean, whether to force to disable auto mode,
+                              overwrites auto and PM_AUTO_MODE
         :param auto: boolean, whether to enable auto mode
-        :param reload: boolean, whether we are reloading modules
         :return: None
         """
-        if reload or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
+        if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
             mods_to_unload = set(mod_list)
             mods_to_load = set()
         else:
-            # Get the list of modules to unload
+            # Reload broken modules to simplify the logic flow and to avoid
+            # potential bugs
+            mods_unloaded = []
+            mods_broken = []
+            mods_loaded = []
+            for mod_name, module in self.available_mods.items():
+                status = module.check_status()
+                if status == -1:
+                    mods_unloaded.append(mod_name)
+                elif status == 0:
+                    mods_broken.append(mod_name)
+                else:
+                    mods_loaded.append(mod_name)
+            if len(mods_broken) != 0:
+                self.unload_mods(mods_broken, force_no_auto=True)
+                self.load_mods(mods_broken, force_no_auto=True)
+                mods_loaded.extend(mods_broken)
+
+            # Get the list of modules to unload and to load
             dependencies = self.build_dependencies(mod_list)
             mods_to_unload = [mod_name for mod_name in dependencies
-                          if self.available_mods[mod_name].check_status() != -1]
-            mods_to_unload, mods_to_load = self.auto_adjust_unload(mods_to_unload)
+                              if mod_name not in mods_unloaded]
+            mods_to_load = []
+            mods_to_unload, mods_to_load = self.auto_adjust_unload(
+                                      mods_to_unload, mods_to_load, mods_loaded)
 
         # Collect settings from each module and echo to stdout
         new_environ = self.build_environ(mods_to_load.union(mods_to_unload))
@@ -521,18 +567,22 @@ class ModManager(object):
             self.available_mods[mod_name].unload(new_environ)
         for mod_name in mods_to_load:
             self.available_mods[mod_name].load(new_environ)
+        for env_name, env_value in new_environ.items():
+            env_string = "".join(["%s:" % pattern for pattern in env_value
+                                      if pattern != ""])
+            if env_string != "" and env_string[-1] == ":":
+                env_string = env_string[:-1]
+            print_stdout("export %s=%s;" % (env_name, env_string))
         for command in commands:
             print_stdout("%s;" % command)
-        for env_name, env_value in new_environ.items():
-            print_stdout("export %s=%s;" % (env_name, env_value))
 
     def reload(self):
         """
-        Reload all loaded modules. Broken modules will be fixed.
+        Reload all loaded and broken modules.
 
         :return: None
         """
         mods_to_load = [mod_name for mod_name in self.available_mods.keys()
                         if self.available_mods[mod_name].check_status() != -1]
-        self.unload_mods(mods_to_load, reload=True)
-        self.load_mods(mods_to_load, reload=True)
+        self.unload_mods(mods_to_load, force_no_auto=True, auto=False)
+        self.load_mods(mods_to_load, force_no_auto=True, auto=False)
