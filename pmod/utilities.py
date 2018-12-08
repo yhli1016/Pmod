@@ -159,3 +159,26 @@ def print_table(table_head, table_body, number_items=True):
                 sys.stderr.write("\n")
             sys.stderr.write("\n")
             sys.stderr.flush()
+
+
+def print_list(list_head, list_body, number_items=True):
+    """
+    Prints a list to stderr.
+
+    :param list_head: string, head of the list
+    :param list_body: list of strings
+    :param number_items: boolean, whether to number the items
+    :return:
+    """
+    sys.stderr.write("%s: " % list_head)
+    if len(list_body) == 0:
+        sys.stderr.write("None")
+    else:
+        if number_items:
+            for i, item in enumerate(list_body):
+                sys.stderr.write("%4d) %s" % (i+1, item))
+        else:
+            for i, item in enumerate(list_body):
+                sys.stderr.write("%s" % item)
+    sys.stderr.write("\n")
+    sys.stderr.flush()

@@ -2,7 +2,7 @@ import sys
 import os
 import re
 from pmod.utilities import (print_stdout, print_stderr, print_banner,
-                            get_terminal_size, print_table)
+                            get_terminal_size, print_table, print_list)
 from pmod.module import Module
 
 
@@ -51,18 +51,40 @@ class ModManager(object):
     def check_mod_names(self, mod_list):
         """
         Check if given modules have been defined in self.available_mods and
-        return a list with the names of all defined modules.
+        return a list with the names of all defined modules. If the module name
+        does not contain version number, then the last version number will be
+        appended to it. If no matching module is found, then it is removed from
+        mod_list and a warning message is casted.
 
         :param mod_list: list of the names of modules
         :return: list of the names of defined modules
         """
-        defined_mods = []
+        mods_defined = []
         for mod_name in mod_list:
-            if mod_name not in self.available_mods.keys():
-                print_stderr("WARNING: undefined module %s skipped" % mod_name)
+            # Search for all possible versions
+            mods_found = []
+            for mod_avail in self.available_mods.keys():
+                if re.match("%s/"%mod_name, mod_avail, re.IGNORECASE):
+                    mods_found.append(mod_avail)
+            if len(mods_found) != 0:
+                mods_defined.append(mods_found[-1])
             else:
-                defined_mods.append(mod_name)
-        return defined_mods
+                # If no version is found, then search for the module name
+                # directly.
+                mods_found = []
+                for mod_avail in self.available_mods.keys():
+                    if re.match("%s" % mod_name, mod_avail, re.IGNORECASE):
+                        mods_found.append(mod_avail)
+                status_match = False
+                for mod_found in mods_found:
+                    if mod_name.lower() == mod_found.lower():
+                        mods_defined.append(mod_found)
+                        status_match = True
+                if not status_match:
+                    print_stderr("WARNING: undefined module %s skipped"
+                                 % mod_name)
+                    print_list("Candidates", mods_found, number_items=False)
+        return mods_defined
 
     def get_mod_names(self):
         """

@@ -82,6 +82,7 @@ class Module(object):
             self.conflict.extend(conflict)
         if command is not None:
             self.command.extend(command)
+        self.check_environ()
 
     def check_environ(self):
         """
