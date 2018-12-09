@@ -179,6 +179,6 @@ def print_list(list_head, list_body, number_items=True):
                 sys.stderr.write("%4d) %s" % (i+1, item))
         else:
             for i, item in enumerate(list_body):
-                sys.stderr.write("%s" % item)
+                sys.stderr.write(" %s" % item)
     sys.stderr.write("\n")
     sys.stderr.flush()

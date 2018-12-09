@@ -7,11 +7,11 @@ class Module(object):
     """
     Class representing a module.
 
-    Each instance of this class has four lists, namely environ, depend, conflict
-    and command.
+    Each instance of this class has five lists, namely environ, depend,
+    conflict, command and alias.
 
     self.environ contains the commands to set environmental variables.
-    Each element in environ is three-element tuple in the form (action, name,
+    Each element in environ is a three-element tuple in the form (action, name,
     pattern), where action should be in ("append", "prepend", "reset"), name is
     the name of environmental on which the action will be modified, and pattern
     is the string with which the environmental variable will be modified.
@@ -21,6 +21,9 @@ class Module(object):
     self.conflict contains the conflicting modules.
 
     self.command contains additional initialization commands.
+
+    self.alias contains the aliases to be set. Each element in alias is a tuple
+    with two elements (alias name, alias string).
     """
     def __init__(self, mod_name):
         """
@@ -31,9 +34,10 @@ class Module(object):
         self.depend = []
         self.conflict = []
         self.command = []
+        self.alias = []
 
     def add_settings(self, preset="void", destination=None, environ=None,
-                     depend=None, conflict=None, command=None):
+                     depend=None, conflict=None, command=None, alias=None):
         """
         Add settings to this instance.
 
@@ -44,6 +48,7 @@ class Module(object):
         :param depend: list of strings, dependencies of the module
         :param conflict: list of strings, conflicting modules of the module
         :param command: list of strings, additional initialization scripts
+        :param alias: list of tuples, alias settings
         :return: None
         """
         # Add pre-defined items to environ
@@ -82,6 +87,8 @@ class Module(object):
             self.conflict.extend(conflict)
         if command is not None:
             self.command.extend(command)
+        if alias is not None:
+            self.alias.extend(alias)
         self.check_environ()
 
     def check_environ(self):
@@ -122,7 +129,7 @@ class Module(object):
         else:
             return -1
 
-    def load(self, new_environ):
+    def set_environ(self, new_environ):
         """
         Update the environmental settings in new_environ to load this module.
 
@@ -142,7 +149,7 @@ class Module(object):
                   and pattern not in new_environ[env_name]):
                 new_environ[env_name].insert(0, pattern)
 
-    def unload(self, new_environ):
+    def unset_environ(self, new_environ):
         """
         Update the environmental settings in new_environ to unload this module.
 

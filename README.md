@@ -53,13 +53,14 @@ of the *ModManager* class. bin/modcmd.py then imports this instance and call its
 methods to perform specified operations. Inside this class a dictionary named
 *available\_mods* contained all the module definitions.
 
-Each module is presented with an instance of the *Module* class, which has four
-lists: *environ*, *depend*, *conflict* and *command*. Each element of *environ*
-is a tuple with three elements: action to be performed, name of the
+Each module is presented with an instance of the *Module* class, which has five
+lists: *environ*, *depend*, *conflict*, *command* and "alias". Each element of
+*environ* is a tuple with three elements: action to be performed, name of the
 environmental variable, and the string with which the environmental variable
-will be modified. Modules can have dependencies, conflicting modules and
-additional initialization scripts, as stored in the lists of *depend*,
-*conflict* and *command* respectively.
+will be modified. Modules can have dependencies, conflicting modules,
+additional initialization scripts and aliases settings, as stored in the lists
+of *depend*, *conflict*, *command* and *alias* respectively. Each element of
+*alias* is a tuple of (alias name, alias string).
 
 The auxiliary method *add\_mod()* of *ModManager* is provided for the
 manipulation of modules, which calls the *add\_settings()* method of *Module*.
