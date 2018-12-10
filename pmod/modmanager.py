@@ -106,14 +106,20 @@ class ModManager(object):
                        if module.check_status() == 1]
         return loaded_mods
 
-    def build_dependencies(self, mod_list):
+    def build_dependencies(self, root_mods, include_roots=True):
         """
         Extract the dependencies recursively for a list of modules.
 
-        :param mod_list: list of the names of modules
+        :param root_mods: list of the names of root modules
+        :param include_roots: boolean, whether to include root mods in results
         :return: set of the names of all the dependencies
         """
-        dependencies = [mod_name for mod_name in mod_list]
+        if include_roots:
+            dependencies = [mod_name for mod_name in root_mods]
+        else:
+            dependencies = []
+            for mod_name in root_mods:
+                dependencies.extend(self.available_mods[mod_name].depend)
         for mod_name in dependencies:
             module = self.available_mods[mod_name]
             for depend_item in module.depend:
@@ -133,6 +139,40 @@ class ModManager(object):
             module = self.available_mods[mod_name]
             conflicts.extend(module.conflict)
         return set(conflicts)
+
+    def sort_mods(self, mod_list):
+        """
+        Sort modules according to their depth in the dependency tree.
+
+        :param mod_list: list of modules to sort
+        :return: sorted list with depth in decreasing order
+        """
+        # Check if there are cyclic dependencies
+        for mod_name in mod_list:
+            if mod_name in self.build_dependencies([mod_name],
+                                                   include_roots=False):
+                print_stderr("ERROR: module %s has cyclic dependencies"
+                             % mod_name)
+                sys.exit(-1)
+
+        # Build the dependency tree
+        depend_tree = [[mod_name, 0] for mod_name in mod_list]
+        depth = 0
+        status_updated = True
+        while status_updated:
+            status_updated = False
+            nodes_to_check = [node for node in depend_tree if node[1] == depth]
+            for parent in nodes_to_check:
+                for child in depend_tree:
+                    if child[0] in self.available_mods[parent[0]].depend:
+                        child[1] += 1
+                        status_updated = True
+            depth += 1
+
+        # Sort the nodes according to their depth in dependency tree
+        sorted_tree = sorted(depend_tree, key=lambda x: x[1], reverse=True)
+        sorted_mods = [node[0] for node in sorted_tree]
+        return sorted_mods
 
     def auto_adjust_load(self, mods_to_unload, mods_to_load, mods_loaded):
         """
@@ -495,6 +535,8 @@ class ModManager(object):
                                                       mods_to_load, mods_loaded)
 
         # Collect settings from each module and echo
+        mods_to_unload = self.sort_mods(mods_to_unload)
+        mods_to_load = self.sort_mods(mods_to_load)
         sandbox = SandBox()
         for mod_name in mods_to_unload:
             self.available_mods[mod_name].unload(sandbox)
@@ -543,6 +585,8 @@ class ModManager(object):
                                       mods_to_unload, mods_to_load, mods_loaded)
 
         # Collect settings from each module and echo
+        mods_to_unload = self.sort_mods(mods_to_unload)
+        mods_to_load = self.sort_mods(mods_to_load)
         sandbox = SandBox()
         for mod_name in mods_to_unload:
             self.available_mods[mod_name].unload(sandbox)
