@@ -1,9 +1,10 @@
 import sys
 import os
 import re
-from pmod.utilities import (print_stdout, print_stderr, print_banner,
-                            get_terminal_size, print_table, print_list)
+from pmod.utilities import (print_stderr, print_banner, get_terminal_size,
+                            print_table, print_list)
 from pmod.module import Module
+from pmod.sandbox import SandBox
 
 
 class ModManager(object):
@@ -105,25 +106,6 @@ class ModManager(object):
                        if module.check_status() == 1]
         return loaded_mods
 
-    def build_environ(self, mod_list):
-        """
-        Copy and split the current values of OS environmental variables to be
-        altered by the modules in mod_list to a new dictionary.
-
-        :param mod_list: list of the names of modules
-        :return: dictionary storing the environmental variables
-        """
-        new_environ = dict()
-        for mod_name in mod_list:
-            module = self.available_mods[mod_name]
-            for environ_item in module.environ:
-                env_name = environ_item[1]
-                if env_name in os.environ.keys():
-                    new_environ[env_name] = os.environ[env_name].split(":")
-                else:
-                    new_environ[env_name] = [""]
-        return new_environ
-
     def build_dependencies(self, mod_list):
         """
         Extract the dependencies recursively for a list of modules.
@@ -151,32 +133,6 @@ class ModManager(object):
             module = self.available_mods[mod_name]
             conflicts.extend(module.conflict)
         return set(conflicts)
-
-    def build_commands(self, mod_list):
-        """
-        Extract the commands for a list of modules.
-
-        :param mod_list: list of the names of modules.
-        :return: set of all the commands
-        """
-        commands = []
-        for mod_name in mod_list:
-            module = self.available_mods[mod_name]
-            commands.extend(module.command)
-        return set(commands)
-
-    def build_aliases(self, mod_list):
-        """
-        Extract the aliases for a list of modules.
-
-        :param mod_list: list of the names of modules.
-        :return: set of all the aliases.
-        """
-        aliases = []
-        for mod_name in mod_list:
-            module = self.available_mods[mod_name]
-            aliases.extend(module.alias)
-        return set(aliases)
 
     def auto_adjust_load(self, mods_to_unload, mods_to_load, mods_loaded):
         """
@@ -265,7 +221,6 @@ class ModManager(object):
                     mods_to_unload.append(loaded_mod)
 
         return set(mods_to_unload), set(mods_to_load)
-
 
     def auto_adjust_unload(self, mods_to_unload, mods_to_load, mods_loaded):
         """
@@ -539,29 +494,13 @@ class ModManager(object):
             mods_to_unload, mods_to_load = self.auto_adjust_load(mods_to_unload,
                                                       mods_to_load, mods_loaded)
 
-        # Collect settings from each module
-        new_environ = self.build_environ(mods_to_load.union(mods_to_unload))
-        commands = self.build_commands(mods_to_load)
-        aliases_to_unset = self.build_aliases(mods_to_unload)
-        aliases_to_set = self.build_aliases(mods_to_load)
+        # Collect settings from each module and echo
+        sandbox = SandBox()
         for mod_name in mods_to_unload:
-            self.available_mods[mod_name].unset_environ(new_environ)
+            self.available_mods[mod_name].unload(sandbox)
         for mod_name in mods_to_load:
-            self.available_mods[mod_name].set_environ(new_environ)
-
-        # Echo commands to stdout
-        for env_name, env_value in new_environ.items():
-            env_string = "".join(["%s:" % pattern for pattern in env_value
-                                      if pattern != ""])
-            if env_string != "" and env_string[-1] == ":":
-                env_string = env_string[:-1]
-            print_stdout("export %s=%s;" % (env_name, env_string))
-        for alias in aliases_to_unset:
-            print_stdout("unalias %s;" % alias[0])
-        for alias in aliases_to_set:
-            print_stdout("alias %s=\"%s\";" % (alias[0], alias[1]))
-        for command in commands:
-            print_stdout("%s;" % command)
+            self.available_mods[mod_name].load(sandbox)
+        sandbox.echo_commands()
 
     def unload_mods(self, mod_list, force_no_auto=False, auto=False):
         """
@@ -595,7 +534,7 @@ class ModManager(object):
                 self.load_mods(mods_broken, force_no_auto=True)
                 mods_loaded.extend(mods_broken)
 
-            # Get the list of modules to unset_environ and to set_environ
+            # Get the list of modules to unload and to load
             dependencies = self.build_dependencies(mod_list)
             mods_to_unload = [mod_name for mod_name in dependencies
                               if mod_name not in mods_unloaded]
@@ -603,29 +542,13 @@ class ModManager(object):
             mods_to_unload, mods_to_load = self.auto_adjust_unload(
                                       mods_to_unload, mods_to_load, mods_loaded)
 
-        # Collect settings from each module
-        new_environ = self.build_environ(mods_to_load.union(mods_to_unload))
-        commands = self.build_commands(mods_to_load)
-        aliases_to_unset = self.build_aliases(mods_to_unload)
-        aliases_to_set = self.build_aliases(mods_to_load)
+        # Collect settings from each module and echo
+        sandbox = SandBox()
         for mod_name in mods_to_unload:
-            self.available_mods[mod_name].unset_environ(new_environ)
+            self.available_mods[mod_name].unload(sandbox)
         for mod_name in mods_to_load:
-            self.available_mods[mod_name].set_environ(new_environ)
-
-        # Echo commands to stdout
-        for env_name, env_value in new_environ.items():
-            env_string = "".join(["%s:" % pattern for pattern in env_value
-                                      if pattern != ""])
-            if env_string != "" and env_string[-1] == ":":
-                env_string = env_string[:-1]
-            print_stdout("export %s=%s;" % (env_name, env_string))
-        for alias in aliases_to_unset:
-            print_stdout("unalias %s;" % alias[0])
-        for alias in aliases_to_set:
-            print_stdout("alias %s=\"%s\";" % (alias[0], alias[1]))
-        for command in commands:
-            print_stdout("%s;" % command)
+            self.available_mods[mod_name].load(sandbox)
+        sandbox.echo_commands()
 
     def reload(self):
         """

@@ -5,7 +5,7 @@ from pmod.utilities import print_stderr
 
 class Module(object):
     """
-    Class representing a module.
+    Class that represents a module.
 
     Each instance of this class has five lists, namely environ, depend,
     conflict, command and alias.
@@ -129,39 +129,39 @@ class Module(object):
         else:
             return -1
 
-    def set_environ(self, new_environ):
+    def load(self, sandbox):
         """
-        Update the environmental settings in new_environ to load this module.
+        Update the environmental settings in sandbox to load this module.
 
-        :param new_environ: dictionary, see the load_mods method of ModManager
-                            class
+        :param sandbox: instance of the SandBox class to collect settings from
+                        this module
         :return: None
         """
         for environ_item in self.environ:
             operation, env_name, pattern = environ_item[0], environ_item[1],\
                                            environ_item[2]
             if operation == "reset":
-                new_environ[env_name] = [pattern]
-            elif (operation == "append"
-                  and pattern not in new_environ[env_name]):
-                new_environ[env_name].append(pattern)
-            elif (operation == "prepend"
-                  and pattern not in new_environ[env_name]):
-                new_environ[env_name].insert(0, pattern)
+                sandbox.reset_env(env_name, pattern)
+            elif operation == "append":
+                sandbox.append_env(env_name, pattern)
+            elif operation == "prepend":
+                sandbox.prepend_env(env_name, pattern)
+        sandbox.add_alias(self.alias)
+        sandbox.add_command(self.command)
 
-    def unset_environ(self, new_environ):
+    def unload(self, sandbox):
         """
-        Update the environmental settings in new_environ to unload this module.
+        Update the environmental settings in sandbox to unload this module.
 
-        :param new_environ: dictionary, see the unload_mods method of ModManager
-                            class
+        :param sandbox: instance of the SandBox class to collect settings from
+                        this module
         :return: None
         """
         for environ_item in self.environ:
             operation, env_name, pattern = environ_item[0], environ_item[1],\
                                            environ_item[2]
             if operation == "reset":
-                new_environ[env_name] = [""]
+                sandbox.reset_env(env_name, "")
             elif operation in ("append", "prepend"):
-                while pattern in new_environ[env_name]:
-                    new_environ[env_name].remove(pattern)
+                sandbox.remove_env(env_name, pattern)
+        sandbox.add_unalias(self.alias)
