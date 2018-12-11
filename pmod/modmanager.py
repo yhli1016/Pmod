@@ -67,7 +67,8 @@ class ModManager(object):
             # Search for all possible versions
             mods_found = []
             for mod_avail in self.available_mods.keys():
-                if re.match("%s[-/]+"%mod_name, mod_avail, re.IGNORECASE):
+                if re.search(r"%s[-/]+" % mod_name, mod_avail,
+                            re.IGNORECASE):
                     mods_found.append(mod_avail)
             if len(mods_found) != 0:
                 mods_defined.append(mods_found[-1])
@@ -76,7 +77,7 @@ class ModManager(object):
                 # directly.
                 mods_found = []
                 for mod_avail in self.available_mods.keys():
-                    if re.match("%s" % mod_name, mod_avail, re.IGNORECASE):
+                    if re.search(r"%s" % mod_name, mod_avail, re.IGNORECASE):
                         mods_found.append(mod_avail)
                 status_match = False
                 for mod_found in mods_found:
