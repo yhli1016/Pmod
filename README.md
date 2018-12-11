@@ -48,13 +48,13 @@ Python 3 are supported. The common installation procedure is as below:
 
 Configuration
 -------------
-Configurations of available modules are stored in pmod/config.py as an instance
-of the *ModManager* class. bin/modcmd.py then imports this instance and call its
-methods to perform specified operations. Inside this class a dictionary named
-*available\_mods* contained all the module definitions.
+Configurations of available modules are stored in modulefiles/setup.py as an
+instance of the *ModManager* class. bin/modcmd.py then imports this instance and
+calls its methods to perform specified operations. Inside this class a
+dictionary named *available\_mods* contains all the module definitions.
 
 Each module is presented with an instance of the *Module* class, which has five
-lists: *environ*, *depend*, *conflict*, *command* and "alias". Each element of
+lists: *environ*, *depend*, *conflict*, *command* and *alias*. Each element of
 *environ* is a tuple with three elements: action to be performed, name of the
 environmental variable, and the string with which the environmental variable
 will be modified. Modules can have dependencies, conflicting modules,
@@ -169,3 +169,12 @@ A: Version management is supported by pmod, but not directly. For example, if
 Q: How can I define a meta-module that loads a collection of other modules?
 
 A: Define it as a void module and add all the modules to load as dependencies.
+
+Q: What if the default preset of environmental variables cannot meet my needs?
+   And how can I change the default behaviours of loading and unloading modules?
+
+A: Derive your own class from the base *Module* class and override appropriate
+   methods. Then pass the derived class as the mod_class keyword argument to the
+   *add_mod* function calls in modulefiles/setup.py. You are recommended to put
+   the class definition files in the same place as setup.py. An example is given
+   in examples/custom.

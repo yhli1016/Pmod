@@ -1,7 +1,7 @@
 #! /bin/env python
 import argparse
 from pmod.utilities import print_stderr
-from pmod.config import mod_manager
+from modulefiles.setup import mod_manager
 
 
 # Parse cli-parameters

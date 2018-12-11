@@ -15,18 +15,20 @@ class ModManager(object):
     def __init__(self):
         self.available_mods = dict()
 
-    def add_mod(self, mod_name, **kwargs):
+    def add_mod(self, mod_name, mod_class=Module, **kwargs):
         """
         Add a new module to self.available_mods and initialize its items.
         If the module already exists, then add new items to this module.
 
         :param mod_name: string, name of the module
+        :param mod_class: class object, type of the module to create if not
+                          present
         :param kwargs: see the add_settings method of the Module class
         :return: None
         """
         # Create the module if not exist
         if mod_name not in self.available_mods.keys():
-            self.available_mods[mod_name] = Module(mod_name)
+            self.available_mods[mod_name] = mod_class(mod_name)
         # Add settings to the module
         self.available_mods[mod_name].add_settings(**kwargs)
 
@@ -94,17 +96,6 @@ class ModManager(object):
         :return: list of the names of available modules
         """
         return self.available_mods.keys()
-
-    def get_loaded_mods(self):
-        """
-        Get the name list of loaded modules.
-
-        :return: list of the loaded modules
-        """
-        loaded_mods = [mod_name
-                       for mod_name, module in self.available_mods.items()
-                       if module.check_status() == 1]
-        return loaded_mods
 
     def build_dependencies(self, root_mods, include_roots=True):
         """
@@ -495,7 +486,8 @@ class ModManager(object):
         :return: None
         """
         if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
-            mods_to_load = set(mod_list)
+            mods_to_load = set([mod_name for mod_name in mod_list
+                        if self.available_mods[mod_name].check_status() != 1])
             mods_to_unload = set()
         else:
             # Check if there are paradoxes
@@ -555,7 +547,8 @@ class ModManager(object):
         :return: None
         """
         if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
-            mods_to_unload = set(mod_list)
+            mods_to_unload = set([mod_name for mod_name in mod_list
+                        if self.available_mods[mod_name].check_status() != -1])
             mods_to_load = set()
         else:
             # Reload broken modules to simplify the logic flow and to avoid
