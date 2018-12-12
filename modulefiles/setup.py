@@ -27,26 +27,27 @@ for version in openmpi_versions:
     m.add_mod(version, preset='void', conflict=['IntelMPI/2018.1.163'])
 
 # Anaconda
-m.add_mod('anaconda2', preset='mod', destination='/opt/anaconda2',
-          conflict=['anaconda3'])
-m.add_mod('anaconda3', preset='mod', destination='/opt/anaconda3',
-          conflict=['anaconda2'])
+m.add_mod('anaconda2/5.3.0', preset='mod', destination='/opt/anaconda2',
+          conflict=['anaconda3/5.3.0'])
+m.add_mod('anaconda3/5.3.0', preset='mod', destination='/opt/anaconda3',
+          conflict=['anaconda2/5.3.0'])
 
 # Phonopy
 m.add_mod('phonopy/1.13.2', preset='path',
-          destination='/opt/phonopy/1.13.2/bin', depend=['anaconda2'])
+          destination='/opt/phonopy/1.13.2/bin', depend=['anaconda2/5.3.0'])
 m.add_mod('phonopy/1.13.2', preset='py',
           destination='/opt/phonopy/1.13.2/lib/python2.7/site-packages')
 
 # ASE
 m.add_mod('ASE/3.16.2', preset='path', destination='/opt/ase/3.16.2/bin',
-          depend=['anaconda2'])
+          depend=['anaconda2/5.3.0'])
 m.add_mod('ASE/3.16.2', preset='py',
           destination='/opt/ase/3.16.2/lib/python2.7/site-packages')
 
 # PYXAID
 m.add_mod('PYXAID', preset='path', destination='/opt/PYXAID/bin',
-          depend=['anaconda2', 'IntelCC/2018.1.163', 'IntelMPI/2018.1.163'],
+          depend=['anaconda2/5.3.0', 'IntelCC/2018.1.163',
+                  'IntelMPI/2018.1.163'],
           conflict=openmpi_versions)
 m.add_mod('PYXAID', preset='py', destination='/opt/PYXAID')
 
@@ -54,7 +55,7 @@ m.add_mod('PYXAID', preset='py', destination='/opt/PYXAID')
 m.add_mod('gpaw/1.4.0', preset='path', destination='/opt/gpaw/1.4.0/bin',
           environ=[('reset', 'GPAW_SETUP_PATH',
                     '/opt/gpaw/1.4.0/data/gpaw-setups-0.9.20000')],
-          depend=['anaconda2', 'ASE/3.16.2', 'IntelCC/2018.1.163',
+          depend=['anaconda2/5.3.0', 'ASE/3.16.2', 'IntelCC/2018.1.163',
                   'IntelMPI/2018.1.163', 'openblas/0.2.20'],
           conflict=openmpi_versions)
 m.add_mod('gpaw/1.4.0', preset='py',
@@ -74,10 +75,10 @@ m.add_mod('vtstscripts', preset='path', destination='/opt/vasp/vtstscripts-935')
 m.add_mod('selfscripts', preset='path', destination='/opt/vasp/selfscripts')
 
 # Gaussian
-m.add_mod('Gaussian09', preset='path', destination='/opt/g09',
-          command=['source /opt/g09/bsd/g09.profile'], conflict=['Gaussian16'])
-m.add_mod('Gaussian16', preset='path', destination='/opt/g16',
-          command=['source /opt/g16/bsd/g16.profile'], conflict=['Gaussian09'])
+m.add_mod('Gaussian/09', preset='path', destination='/opt/g09',
+          command=['source /opt/g09/bsd/g09.profile'], conflict=['Gaussian/16'])
+m.add_mod('Gaussian/16', preset='path', destination='/opt/g16',
+          command=['source /opt/g16/bsd/g16.profile'], conflict=['Gaussian/09'])
 
 # CP2K
 m.add_mod('cp2k/6.1.0', preset='path',

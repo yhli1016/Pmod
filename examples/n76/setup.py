@@ -48,8 +48,8 @@ m.add_mod("exciting/carbon", preset="path",
           depend=["mkl/13.0.079", "openmpi/1.10.0"])
 
 # for aipes
-m.add_mod("anaconda3", preset="mod", destination=prefix+"anaconda3")
+m.add_mod("anaconda3/5.0.1", preset="mod", destination=prefix+"anaconda3")
 m.add_mod("amp/0.6", preset="py", destination=prefix+"amp-v0.6",
-          depend=["anaconda3"])
+          depend=["anaconda3/5.0.1"])
 m.add_mod("aipes", preset="py", destination=prefix+"aipes",
-          depend=["anaconda3", "amp/0.6"])
+          depend=["anaconda3/5.0.1", "amp/0.6"])
