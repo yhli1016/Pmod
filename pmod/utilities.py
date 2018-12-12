@@ -1,5 +1,7 @@
 import sys
 import os
+import re
+from operator import itemgetter
 
 
 def print_stdout(command):
@@ -182,3 +184,38 @@ def print_list(list_head, list_body, number_items=True):
                 sys.stderr.write(" %s" % item)
     sys.stderr.write("\n")
     sys.stderr.flush()
+
+
+def get_latest_version(versions):
+    """
+    Get the latest version for given software.
+    :param versions: list of string, different versions of the software, each
+                     version should be in the form of
+                     [a-zA-Z0-9]+[-/]+[0-9\.]+.?
+    :return: string, the latest version of this software
+    """
+    # Extract and normalize version numbers from software names
+    ver_str = [re.search(r"[0-9\.]+", ver).group().split(".")
+               for ver in versions]
+    ver_num = [[int(i) for i in ver if i != ""] for ver in ver_str]
+    num_digit = max([len(ver) for ver in ver_num])
+    for ver in ver_num:
+        while len(ver) < num_digit:
+            ver.append(0)
+
+    # Sort version numbers
+    ver_num = sorted(ver_num, key=itemgetter(slice(0, num_digit, 1)))
+
+    # Get the software name corresponding to the latest version
+    latest_version = sorted(versions)[-1]
+    for ver_check in versions:
+        ver_str_check = re.search(r"[0-9\.]+", ver_check).group().split(".")
+        ver_num_check = [int(i) for i in ver_str_check if i != ""]
+        while len(ver_num_check) < num_digit:
+            ver_num_check.append(0)
+        difference = [abs(ver_num_check[i] - ver_num[-1][i])
+                      for i in range(num_digit)]
+        if sum(difference) == 0:
+            latest_version = ver_check
+            break
+    return latest_version

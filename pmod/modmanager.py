@@ -2,7 +2,7 @@ import sys
 import os
 import re
 from pmod.utilities import (print_stderr, print_banner, get_terminal_size,
-                            print_table, print_list)
+                            print_table, print_list, get_latest_version)
 from pmod.module import Module
 from pmod.sandbox import SandBox
 
@@ -67,11 +67,11 @@ class ModManager(object):
             # Search for all possible versions
             mods_found = []
             for mod_avail in self.available_mods.keys():
-                if re.search(r"%s[-/]+" % mod_name, mod_avail,
+                if re.search(r"%s[-/]+[0-9\.]+.?" % mod_name, mod_avail,
                             re.IGNORECASE):
                     mods_found.append(mod_avail)
             if len(mods_found) != 0:
-                mods_defined.append(mods_found[-1])
+                mods_defined.append(get_latest_version(mods_found))
             else:
                 # If no version is found, then search for the module name
                 # directly.
