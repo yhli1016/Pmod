@@ -50,6 +50,11 @@ class ModManager(object):
                     print_stderr("ERROR: module %s has undefined conflicting"
                               " module %s" % (mod_name, conflict_item))
                     sys.exit(-1)
+            if mod_name in self.build_dependencies([mod_name],
+                                                   include_roots=False):
+                print_stderr("ERROR: module %s has cyclic dependencies"
+                             % mod_name)
+                sys.exit(-1)
 
     def check_mod_names(self, mod_list):
         """
@@ -139,15 +144,9 @@ class ModManager(object):
         :param mod_list: list of modules to sort
         :return: sorted list with depth in decreasing order
         """
-        # Check if there are cyclic dependencies
-        for mod_name in mod_list:
-            if mod_name in self.build_dependencies([mod_name],
-                                                   include_roots=False):
-                print_stderr("ERROR: module %s has cyclic dependencies"
-                             % mod_name)
-                sys.exit(-1)
-
         # Build the dependency tree
+        # It is assumed that the modules have been checked for cyclic
+        # dependencies. Otherwise the loop will be INFINITE.
         depend_tree = [[mod_name, 0] for mod_name in mod_list]
         depth = 0
         status_updated = True
