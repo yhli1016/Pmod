@@ -15,9 +15,9 @@ class ModManager(object):
     def __init__(self):
         self.available_mods = dict()
 
-    def add_mod(self, mod_name, mod_class=Module, **kwargs):
+    def create_mod(self, mod_name, mod_class=Module, **kwargs):
         """
-        Add a new module to self.available_mods and initialize its items.
+        Create a new module to self.available_mods and initialize its items.
         If the module already exists, then add new items to this module.
 
         :param mod_name: string, name of the module
@@ -26,11 +26,19 @@ class ModManager(object):
         :param kwargs: see the add_settings method of the Module class
         :return: None
         """
-        # Create the module if not exist
         if mod_name not in self.available_mods.keys():
-            self.available_mods[mod_name] = mod_class(mod_name)
-        # Add settings to the module
-        self.available_mods[mod_name].add_settings(**kwargs)
+            self.available_mods[mod_name] = mod_class(mod_name, **kwargs)
+        else:
+            self.available_mods[mod_name].add_settings(**kwargs)
+
+    def add_mod(self, module):
+        """
+        Add an existing module to self.available_mods.
+
+        :param module: instance of the 'Module' class and all derived classes
+        :return: None
+        """
+        self.available_mods[module.mod_name] = module
 
     def check_sanity(self):
         """

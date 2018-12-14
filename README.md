@@ -175,6 +175,58 @@ Q: What if the default preset of environmental variables cannot meet my needs?
 
 A: Derive your own class from the base *Module* class and override appropriate
    methods. Then pass the derived class as the mod_class keyword argument to the
-   *add_mod* function calls in modulefiles/setup.py. You are recommended to put
-   the class definition files in the same place as setup.py. An example is given
-   in examples/custom.
+   *create_mod* function calls in modulefiles/setup.py. You are recommended
+   to put the class definition files in the same place as setup.py. An example
+   is given in examples/custom.
+
+Q: How to use a Software Module hierarchy like that in
+   https://lmod.readthedocs.io/en/latest/080_hierarchy.html?
+
+A: There are at least two approaches. One approach is to conditionally add
+   modules to module manager, e.g. depending on whether some specific modules
+   have been loaded or not, which is similar to that of lmod. However, this
+   approach has many disadvantages. The modulefiles package initialization
+   scripts will become complicated and bug prone. The other disadvantage is that
+   if loading module A creates modules that are not dependent on it, then these
+   modules will become unavailable to module manager if module A is unloaded
+   although their settings still reside in environmental variables. So we take
+   another approach in an object-oriented manner.
+
+   In our opinion, the most complicated and bug-prone part of a software module
+   hierarchy is the maintenance of dependencies and conflicting modules. We
+   propose to handle this problem with a hierarchy of module classes.
+
+   In the root of the hierarchy lies the *Module* class that ships with Pmod.
+   Compilers like GCC and Intel should have their own classes derived from
+   *Module* class, e.g. *GNUCompiler* and *IntelCompiler*. These classes should
+   have overridden __init__() methods that add conflicting modules to
+   self.conflict.
+
+   Compiler-dependent software should have their own classes derived from the
+   compiler classes, e.g. *GNUCompilerDer* and *IntelCompilerDer*. Similar to
+   compiler classes, classes of the compiler-dependent modules should have
+   overridden __init__() methods that add the instance of the parent class as
+   a dependency.
+
+   Supposing that we have two versions of GCC installed: GCC/4.8.5 and
+   GCC/8.2.1. We define define two classes for these compilers, namely GCC485
+   and GCC821. In the __init__() methods of these classes, the other version of
+   compiler should be claimed as conflicting modules mutually. Then we define
+   GCC485Der and GCC821Der as derived classes of GCC485 and GCC821, for
+   representing programs and libraries built from each compiler, respectively.
+   In the __init__() methods of these derived classes, 'GCC/4.8.5' and
+   'GCC/8.2.1' should be claimed as a dependency.
+
+   For MPI implementations and MPI-dependent programs the hierarchy is similar
+   to that of compilers. For example, if we have openmpi 3.1.3 built on
+   GCC/4.8.5, we can derive the OpenMPI313 class from GCC485Der and
+   OpenMPI313Der from OpenMPI313. conflicting modules and dependencies should be
+   added in the __init__() methods of OpenMPI313 and OpenMPI313Der,
+   respectively.
+
+   In this approach the efforts required to maintain dependencies and
+   conflicting modules will be significantly reduced, as many of them are
+   inherited from the parent classes automatically. Also, there's no need to
+   update the settings of a whole array of modules of derived class if the
+   parent class changes. An example is given in examples/hierarchy, which is an
+   refactored version of examples/n79.

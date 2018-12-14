@@ -25,9 +25,10 @@ class Module(object):
     self.alias contains the aliases to be set. Each element in alias is a tuple
     with two elements (alias name, alias string).
     """
-    def __init__(self, mod_name):
+    def __init__(self, mod_name, **kwargs):
         """
         :param mod_name: string, name of the module
+        :param **kwargs: see the add_settings method of the Module class
         """
         self.mod_name = mod_name
         self.environ = [("prepend", "PM_LOADED_MODULES", self.mod_name)]
@@ -35,6 +36,7 @@ class Module(object):
         self.conflict = []
         self.command = []
         self.alias = []
+        self.add_settings(**kwargs)
 
     def add_settings(self, preset="void", destination=None, environ=None,
                      depend=None, conflict=None, command=None, alias=None):
