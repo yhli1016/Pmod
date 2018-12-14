@@ -116,7 +116,7 @@ def print_table(table_head, table_body, number_items=True):
 
     # Print table body
     if len(table_body) == 0:
-        print_stderr("None")
+        print_stderr("None\n")
     else:
         # Get the maximum length of string with reserved spaces.
         # DO NOT CHANGE THE NUMBER of RESERVED SPACES.

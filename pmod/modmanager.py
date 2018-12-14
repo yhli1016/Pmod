@@ -402,11 +402,21 @@ class ModManager(object):
             for env in module.environ:
                 print_stderr(fmt % (env[0], env[1], env[2]))
 
-            # Print other items
+            # Print dependencies, conflicting modules and commands
             print_table("Dependencies", module.depend, number_items=False)
             print_table("Conflicting modules", module.conflict,
                         number_items=False)
             print_table("Commands", module.command, number_items=False)
+
+            # Print aliases
+            print_banner("Aliases", num_column)
+            if len(module.alias) != 0:
+                fmt = "alias %s=\"%s\""
+                for alias in module.alias:
+                    print_stderr(fmt % (alias[0], alias[1]))
+                print_stderr("")
+            else:
+                print_stderr("None\n")
 
     def diagnose_mods(self, mod_list):
         """
