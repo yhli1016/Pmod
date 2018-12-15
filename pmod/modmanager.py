@@ -613,5 +613,5 @@ class ModManager(object):
         """
         mods_to_load = [mod_name for mod_name in self.available_mods.keys()
                         if self.available_mods[mod_name].check_status() != -1]
-        self.unload_mods(mods_to_load, force_no_auto=True, auto=False)
-        self.load_mods(mods_to_load, force_no_auto=True, auto=False)
+        self.unload_mods(mods_to_load, force_no_auto=True)
+        self.load_mods(mods_to_load, force_no_auto=True)

@@ -79,8 +79,10 @@ files on our servers are provided in the *examples* directory.
 
 Usage
 -----
-The common usage of pmod is "pmod [-a] operation [mod\_name...]". '-a' enables
-automatic mode, which we will describe in more details. For now the supported
+The common usage of pmod is "pmod [-a] [-f] operation [mod\_name...]". '-a'
+enables automatic mode. -f forces to disable this mode regardless of the '-a'
+parameter or the PM\_AUTO_\MODE environmental variable. More details about the
+automatic mode will be given in the next section. For now the implemented
 operations are:
 
 - avail, av: list all available modules
@@ -136,16 +138,16 @@ When unloading specified targets, the following operations are triggered:
 4. Modules that have dependencies on modules to load are reloaded.
 
 The automatically mode are enabled by either appending '-a' or '--auto' to the
-command-line parameters, or setting the PM\_AUTO\_MODE environmental variable to 1
-in init/bash.sh. By default it is enabled. Set PM\_AUTO\_MODE to 0 if you don't
-like this feature. Keep in mind that the loaded modules may be not usable as it
-seems to be in this case.
+command-line parameters, or setting the PM\_AUTO\_MODE environmental variable to
+1 in init/bash.sh. By default it is enabled. Set PM\_AUTO\_MODE to 0 or append
+'-f' to the command-line parameters if you don't like this feature. Keep in mind
+that the loaded modules may be not usable as it seems to be in this case.
 
 
 FAQ (in advance)
 ----------------
-Q: Why not separate configuration files into different files organized in many
-   directories like that in lmod?
+*Q: Why not separate configuration files into different files organized in many
+   directories like that in lmod?*
 
 A: Doing so will increase the complexity of designing and using this software.
    Moreover, the package management mechanism of Python does not allow
@@ -156,7 +158,7 @@ A: Doing so will increase the complexity of designing and using this software.
    do have a lot of modules, and do not like a large configuration file, we
    recommend you the professional environmental module systems like Lmod.
 
-Q: How about version management?
+*Q: How about version management?*
 
 A: Version management is supported by pmod, but not directly. For example, if
    module foo has three versions, namely A, B and C, then in the definition of
@@ -166,21 +168,22 @@ A: Version management is supported by pmod, but not directly. For example, if
    set difference. Switching between different versions is as simple as invoking
    'module -a load module/B'.
 
-Q: How can I define a meta-module that loads a collection of other modules?
+*Q: How can I define a meta-module that loads a collection of other modules?*
 
 A: Define it as a void module and add all the modules to load as dependencies.
 
-Q: What if the default preset of environmental variables cannot meet my needs?
-   And how can I change the default behaviours of loading and unloading modules?
+*Q: What if the default preset of environmental variables cannot meet my needs?
+    And how can I change the default behaviours of loading and unloading modules
+    ?*
 
 A: Derive your own class from the base *Module* class and override appropriate
-   methods. Then pass the derived class as the mod_class keyword argument to the
-   *create_mod* function calls in modulefiles/setup.py. You are recommended
+   methods. Then pass the derived class as the mod\_class keyword argument to
+   the *create_mod* function calls in modulefiles/setup.py. You are recommended
    to put the class definition files in the same place as setup.py. An example
    is given in examples/custom.
 
-Q: How to use a Software Module hierarchy like that in
-   https://lmod.readthedocs.io/en/latest/080_hierarchy.html?
+*Q: How to use a Software Module hierarchy like that in
+   https://lmod.readthedocs.io/en/latest/080\_hierarchy.html?*
 
 A: There are at least two approaches. One approach is to conditionally add
    modules to module manager, e.g. depending on whether some specific modules

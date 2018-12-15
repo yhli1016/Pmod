@@ -6,6 +6,7 @@ from modulefiles.setup import mod_manager
 
 # Parse cli-parameters
 parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--force_no_auto", default=False, action="store_true")
 parser.add_argument("-a", "--auto", default=False, action="store_true")
 parser.add_argument("operation", type=str,  action="store")
 parser.add_argument("mod_name", type=str, action="store", nargs="*")
@@ -33,11 +34,13 @@ elif args.operation in ("diagnose", "probe"):
 elif args.operation in ("search",):
     mod_manager.search_mods(mod_name)
 elif args.operation in ("load", "add"):
-    mod_manager.load_mods(mod_name, force_no_auto=False, auto=args.auto)
+    mod_manager.load_mods(mod_name, force_no_auto=args.force_no_auto,
+                          auto=args.auto)
 elif args.operation in ("unload", "remove", "rm", "delete", "del"):
-    mod_manager.unload_mods(mod_name, force_no_auto=False, auto=args.auto)
+    mod_manager.unload_mods(mod_name, force_no_auto=args.force_no_auto,
+                            auto=args.auto)
 elif args.operation in ("clean", "purge"):
-    mod_manager.unload_mods(mod_manager.get_mod_names())
+    mod_manager.unload_mods(mod_manager.get_mod_names(), force_no_auto=True)
 elif args.operation in ("reload", "update"):
     mod_manager.reload()
 else:
