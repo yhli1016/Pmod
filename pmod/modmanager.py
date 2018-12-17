@@ -454,7 +454,8 @@ class ModManager(object):
 
             # Check dependencies
             print_banner("Dependencies", num_column)
-            dependencies = self.build_dependencies([mod_name])
+            dependencies = self.build_dependencies([mod_name],
+                                                    include_roots=False)
             status = True
             for depend_item in dependencies:
                 if self.available_mods[depend_item].check_status() != 1:
@@ -613,5 +614,10 @@ class ModManager(object):
         """
         mods_to_load = [mod_name for mod_name in self.available_mods.keys()
                         if self.available_mods[mod_name].check_status() != -1]
-        self.unload_mods(mods_to_load, force_no_auto=True)
-        self.load_mods(mods_to_load, force_no_auto=True)
+        mods_to_load = self.sort_mods(mods_to_load)
+        sandbox = SandBox()
+        for mod_name in mods_to_load:
+            self.available_mods[mod_name].unload(sandbox)
+        for mod_name in mods_to_load:
+            self.available_mods[mod_name].load(sandbox)
+        sandbox.echo_commands()

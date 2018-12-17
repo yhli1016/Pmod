@@ -77,7 +77,7 @@ class Module(object):
         elif preset == "void":
             pass
         else:
-            print_stderr("ERROR: undefined module type %s" % preset)
+            print_stderr("ERROR: undefined preset type %s" % preset)
             sys.exit(-1)
 
         # Add other items
