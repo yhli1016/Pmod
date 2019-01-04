@@ -15,3 +15,7 @@ function module ()
 {
     eval `modcmd.py $*`
 }
+
+commands="avail av status stat list ls info show display diagnose probe search \
+load add unload remove rm delete del clean purge reload update"
+complete -W "$commands" module
