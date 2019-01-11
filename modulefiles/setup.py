@@ -48,22 +48,19 @@ m.create_mod('anaconda3/5.3.0', preset='mod', destination='/opt/anaconda3',
 # Phonopy
 m.create_mod('phonopy/1.13.2', preset='path',
              destination='/opt/phonopy/1.13.2/bin',
-             depend=['IntelCC/2018.1.163', 'anaconda2/5.3.0'],
-             conflict=['anaconda3/5.3.0'])
+             depend=['IntelCC/2018.1.163', 'anaconda2/5.3.0'])
 m.create_mod('phonopy/1.13.2', preset='py',
              destination='/opt/phonopy/1.13.2/lib/python2.7/site-packages')
 
 # ASE
 m.create_mod('ASE/3.16.2', preset='path', destination='/opt/ase/3.16.2/bin',
-             depend=['IntelCC/2018.1.163', 'anaconda2/5.3.0'],
-             conflict=['anaconda3/5.3.0'])
+             depend=['IntelCC/2018.1.163', 'anaconda2/5.3.0'])
 m.create_mod('ASE/3.16.2', preset='py',
              destination='/opt/ase/3.16.2/lib/python2.7/site-packages')
 
 # PYXAID
 m.create_mod('PYXAID', preset='path', destination='/opt/PYXAID/bin',
-             depend=['anaconda2/5.3.0', 'IntelMPI/2018.1.163'],
-             conflict=['anaconda3/5.3.0'])
+             depend=['anaconda2/5.3.0', 'IntelMPI/2018.1.163'])
 m.create_mod('PYXAID', preset='py', destination='/opt/PYXAID')
 
 # GPAW
@@ -71,8 +68,7 @@ m.create_mod('gpaw/1.4.0', preset='path', destination='/opt/gpaw/1.4.0/bin',
              environ=[('reset', 'GPAW_SETUP_PATH',
                        '/opt/gpaw/1.4.0/data/gpaw-setups-0.9.20000')],
              depend=['anaconda2/5.3.0', 'ASE/3.16.2', 'IntelMPI/2018.1.163',
-                     'MKL/2018.1.163', 'openblas/0.2.20'],
-             conflict=['anaconda3/5.3.0'])
+                     'MKL/2018.1.163', 'openblas/0.2.20'])
 m.create_mod('gpaw/1.4.0', preset='py',
              destination='/opt/gpaw/1.4.0/lib/python2.7/site-packages')
 
