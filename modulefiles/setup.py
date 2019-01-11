@@ -1,6 +1,11 @@
 from pmod.modmanager import ModManager
 
 
+def exclude(items, item_excluded):
+    items_remain = [item for item in items if item != item_excluded]
+    return items_remain
+
+
 # Module configurations
 m = mod_manager = ModManager()
 
@@ -8,14 +13,15 @@ m = mod_manager = ModManager()
 m.create_mod('usrlocal', preset='lib', destination='/usr/local/lib')
 m.create_mod('usrlocal', preset='lib', destination='/usr/local/lib64')
 
-# For Intel_Parallel_Studio_XE 2018 update1
+# Intel_Parallel_Studio_XE 2018 update1
 m.create_mod('IntelCC/2018.1.163', preset='void',
              environ=[('reset', 'FC', 'ifort'), ('reset', 'F90', 'ifort'),
-                   ('reset', 'CC', 'icc'), ('reset', 'CXX', 'icpc')],
-             command=['source /opt/intel/bin/compilervars.sh intel64',
-                   'source /opt/intel/mkl/bin/mklvars.sh intel64'])
+                      ('reset', 'CC', 'icc'), ('reset', 'CXX', 'icpc')],
+             command=['source /opt/intel/bin/compilervars.sh intel64'])
 
-# Intel MPI
+m.create_mod('MKL/2018.1.163', preset='void',
+             command=['source /opt/intel/mkl/bin/mklvars.sh intel64'])
+
 openmpi_versions = ['openmpi/%s' % version for version in
                     ['3.1.3-intel', '2.0.2-gcc', '1.6.5-gcc']]
 m.create_mod('IntelMPI/2018.1.163', preset='void', 
@@ -27,12 +33,10 @@ for version in openmpi_versions:
     if version == 'openmpi/3.1.3-intel':
         m.create_mod(version, preset='mod', destination='/opt/%s' % version,
                      depend=['IntelCC/2018.1.163'],
-                     conflict=[ver2 for ver2 in openmpi_versions 
-                               if ver2 != version])
+                     conflict=exclude(openmpi_versions, version))
     else:
         m.create_mod(version, preset='mod', destination='/opt/%s' % version,
-                     conflict=[ver2 for ver2 in openmpi_versions 
-                               if ver2 != version])
+                     conflict=exclude(openmpi_versions, version))
     m.create_mod(version, preset='void', conflict=['IntelMPI/2018.1.163'])
 
 # Anaconda
@@ -66,20 +70,20 @@ m.create_mod('PYXAID', preset='py', destination='/opt/PYXAID')
 m.create_mod('gpaw/1.4.0', preset='path', destination='/opt/gpaw/1.4.0/bin',
              environ=[('reset', 'GPAW_SETUP_PATH',
                        '/opt/gpaw/1.4.0/data/gpaw-setups-0.9.20000')],
-             depend=['anaconda2/5.3.0', 'ASE/3.16.2',
-                     'IntelMPI/2018.1.163', 'openblas/0.2.20'],
+             depend=['anaconda2/5.3.0', 'ASE/3.16.2', 'IntelMPI/2018.1.163',
+                     'MKL/2018.1.163', 'openblas/0.2.20'],
              conflict=['anaconda3/5.3.0'])
 m.create_mod('gpaw/1.4.0', preset='py',
              destination='/opt/gpaw/1.4.0/lib/python2.7/site-packages')
 
 # QE
 m.create_mod('qe/6.3', preset='path', destination='/opt/qe/6.3/bin',
-             depend=['IntelMPI/2018.1.163'])
+             depend=['IntelMPI/2018.1.163', 'MKL/2018.1.163'])
 
 # VASP
 for version in ['vasp/5.4.1', 'vasp/5.4.4']:
     m.create_mod(version, preset='path', destination='/opt/%s/bin' % version,
-                 depend=['IntelMPI/2018.1.163'])
+                 depend=['IntelMPI/2018.1.163', 'MKL/2018.1.163'])
 m.create_mod('vtstscripts', preset='path', destination='/opt/vasp/vtstscripts-935')
 m.create_mod('selfscripts', preset='path', destination='/opt/vasp/selfscripts')
 
@@ -94,7 +98,7 @@ m.create_mod('Gaussian/16', preset='path', destination='/opt/g16',
 # CP2K
 m.create_mod('cp2k/6.1.0', preset='path',
              destination='/opt/cp2k/6.1.0/exe/Linux-x86-64-intelx',
-             depend=['IntelMPI/2018.1.163'])
+             depend=['IntelMPI/2018.1.163', 'MKL/2018.1.163'])
 
 # ORCA
 m.create_mod('orca/3.0.3', preset='void',

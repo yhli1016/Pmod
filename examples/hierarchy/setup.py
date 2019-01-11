@@ -12,9 +12,12 @@ m.create_mod('usrlocal', preset='lib', destination='/usr/local/lib64')
 # For Intel_Parallel_Studio_XE 2018 update1
 m.create_mod('IntelCC/2018.1.163', preset='void',
              environ=[('reset', 'FC', 'ifort'), ('reset', 'F90', 'ifort'),
-                   ('reset', 'CC', 'icc'), ('reset', 'CXX', 'icpc')],
-             command=['source /opt/intel/bin/compilervars.sh intel64',
-                   'source /opt/intel/mkl/bin/mklvars.sh intel64'])
+                      ('reset', 'CC', 'icc'), ('reset', 'CXX', 'icpc')],
+             command=['source /opt/intel/bin/compilervars.sh intel64'])
+
+m.create_mod('MKL/2018.1.163', preset='void',
+             command=['source /opt/intel/mkl/bin/mklvars.sh intel64'])
+
 m.create_mod('IntelMPI/2018.1.163', mod_class=IntelMPI, preset='void',
              command=['source /opt/intel/impi/2018.1.163/bin64/mpivars.sh intel64'])
 
@@ -60,19 +63,20 @@ m.create_mod('gpaw/1.4.0', mod_class=IntelMPIDer, preset='path',
              destination='/opt/gpaw/1.4.0/bin',
              environ=[('reset', 'GPAW_SETUP_PATH',
                     '/opt/gpaw/1.4.0/data/gpaw-setups-0.9.20000')],
-             depend=['anaconda2/5.3.0', 'ASE/3.16.2', 'openblas/0.2.20'],
+             depend=['anaconda2/5.3.0', 'ASE/3.16.2', 'MKL/2018.1.163',
+                     'openblas/0.2.20'],
              conflict=['anaconda3/5.3.0'])
 m.create_mod('gpaw/1.4.0', preset='py',
              destination='/opt/gpaw/1.4.0/lib/python2.7/site-packages')
 
 # QE
 m.create_mod('qe/6.3', mod_class=IntelMPIDer, preset='path',
-             destination='/opt/qe/6.3/bin')
+             depend=['MKL/2018.1.163'], destination='/opt/qe/6.3/bin')
 
 # VASP
 for version in ['vasp/5.4.1', 'vasp/5.4.4']:
     m.create_mod(version, mod_class=IntelMPIDer, preset='path',
-                 destination='/opt/%s/bin' % version)
+                 depend=['MKL/2018.1.163'], destination='/opt/%s/bin' % version)
 m.create_mod('vtstscripts', preset='path',
              destination='/opt/vasp/vtstscripts-935')
 m.create_mod('selfscripts', preset='path',
@@ -88,6 +92,7 @@ m.create_mod('Gaussian/16', preset='path', destination='/opt/g16',
 
 # CP2K
 m.create_mod('cp2k/6.1.0', mod_class=IntelMPIDer, preset='path',
+             depend=['MKL/2018.1.163'],
              destination='/opt/cp2k/6.1.0/exe/Linux-x86-64-intelx')
 
 # ORCA

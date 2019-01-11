@@ -1,6 +1,11 @@
 from pmod.module import Module
 
 
+def exclude(items, item_excluded):
+    items_remain = [item for item in items if item != item_excluded]
+    return items_remain
+
+
 mpi_versions = ['IntelMPI/2018.1.163', 'openmpi/3.1.3-intel',
                 'openmpi/2.0.2-gcc', 'openmpi/1.6.5-gcc']
 
@@ -14,8 +19,7 @@ class IntelCCDer(Module):
 class IntelMPI(IntelCCDer):
     def __init__(self, mod_name, **kwargs):
         super(IntelMPI, self).__init__(mod_name, **kwargs)
-        self.conflict.extend([version for version in mpi_versions
-                              if version != 'IntelMPI/2018.1.163'])
+        self.conflict.extend(exclude(mpi_versions, 'IntelMPI/2018.1.163'))
 
 
 class IntelMPIDer(IntelMPI):
@@ -27,8 +31,7 @@ class IntelMPIDer(IntelMPI):
 class OpenMPI165(Module):
     def __init__(self, mod_name, **kwargs):
         super(OpenMPI165, self).__init__(mod_name, **kwargs)
-        self.conflict.extend([version for version in mpi_versions
-                              if version != 'openmpi/1.6.5-gcc'])
+        self.conflict.extend(exclude(mpi_versions, 'openmpi/1.6.5-gcc'))
 
 
 class OpenMPI165Der(OpenMPI165):
@@ -40,8 +43,7 @@ class OpenMPI165Der(OpenMPI165):
 class OpenMPI202(Module):
     def __init__(self, mod_name, **kwargs):
         super(OpenMPI202, self).__init__(mod_name, **kwargs)
-        self.conflict.extend([version for version in mpi_versions
-                              if version != 'openmpi/2.0.2-gcc'])
+        self.conflict.extend(exclude(mpi_versions, 'openmpi/2.0.2-gcc'))
 
 
 class OpenMPI202Der(OpenMPI202):
@@ -53,8 +55,7 @@ class OpenMPI202Der(OpenMPI202):
 class OpenMPI313(IntelCCDer):
     def __init__(self, mod_name, **kwargs):
         super(OpenMPI313, self).__init__(mod_name, **kwargs)
-        self.conflict.extend([version for version in mpi_versions
-                              if version != 'openmpi/3.1.3-intel'])
+        self.conflict.extend(exclude(mpi_versions, 'openmpi/3.1.3-intel'))
 
 
 class OpenMPI313Der(OpenMPI313):
