@@ -47,28 +47,35 @@ class ModManager(object):
         :return: None
         """
         for mod_name, module in self.available_mods.items():
+            # Check for illegal environ settings
             module.check_environ()
+
+            # Check for unresolved dependencies
             for depend_item in module.depend:
                 if depend_item not in self.available_mods.keys():
                     print_stderr("ERROR: module %s has undefined dependency %s"
                                  % (mod_name, depend_item))
                     sys.exit(-1)
+
+            # Check for unresolved conflicting modules
             for conflict_item in module.conflict:
                 if conflict_item not in self.available_mods.keys():
                     print_stderr("ERROR: module %s has undefined conflicting"
                               " module %s" % (mod_name, conflict_item))
                     sys.exit(-1)
+
+            # Check for cyclic dependencies
             if mod_name in self.build_dependencies([mod_name],
                                                    include_roots=False):
                 print_stderr("ERROR: module %s has cyclic dependencies"
                              % mod_name)
                 sys.exit(-1)
 
-    def check_mod_names(self, mod_list):
+    def verify_mod_names(self, mod_list):
         """
         Check if given modules have been defined in self.available_mods and
         return a list with the names of all defined modules. If the module name
-        does not contain version number, then the last version number will be
+        does not contain version number, then the last version number is
         appended to it. If no matching module is found, then it is removed from
         mod_list and a warning message is casted.
 
@@ -83,24 +90,30 @@ class ModManager(object):
                 if re.search(r"%s[-/]+[0-9\.]+.?" % mod_name, mod_avail,
                             re.IGNORECASE):
                     mods_found.append(mod_avail)
+
+            # Get the latest version. If no version is found, then search for
+            # the module name directly.
             if len(mods_found) != 0:
                 mods_defined.append(get_latest_version(mods_found))
             else:
-                # If no version is found, then search for the module name
-                # directly.
-                mods_found = []
+                # Get all possible candidates
                 for mod_avail in self.available_mods.keys():
                     if re.search(r"%s" % mod_name, mod_avail, re.IGNORECASE):
                         mods_found.append(mod_avail)
+
+                # Check if the candidates match the module name exactly
                 status_match = False
                 for mod_found in mods_found:
                     if mod_name.lower() == mod_found.lower():
                         mods_defined.append(mod_found)
                         status_match = True
+
+                # If no matching items found, echo suggestions to the user
                 if not status_match:
                     print_stderr("WARNING: undefined module %s skipped"
                                  % mod_name)
                     print_list("Suggestions", mods_found, number_items=False)
+
         return mods_defined
 
     def get_mod_names(self):
@@ -183,16 +196,12 @@ class ModManager(object):
            mods_to_unload.
         2. Unusable modules due to dependency on mods_to_unload are added to
            mods_to_unload recursively.
-        3. Modules that have to be reloaded due to conflicts with mods_to_unload
-           are added to both lists.
-        4. Modules that have to be reloaded due to dependencies on mods_to_load
-           are added to both lists recursively.
 
         This piece of code may be the most complicated and bug-prone part of
         this software. So TEST CAREFULLY if you made any changes. Knowing
         exactly what you are doing is not enough, as programs often (always) do
         not work as you expect. In particular, DO NOT change the order of steps
-        1-4 as they do not commute.
+        1-2 as they do not commute.
 
         :param mods_to_unload: list of strings, names of the modules to unload
         :param mods_to_load: list or strings, names of the modules to load
@@ -234,30 +243,6 @@ class ModManager(object):
                     and loaded_mod not in mods_to_unload):
                     mods_to_unload.append(loaded_mod)
                     mods_check_copy.remove(loaded_mod)
-        mods_check = mods_check_copy
-
-        # 3. Check for modules that have to be reloaded due to conflicts on
-        # mods_to_unload.
-        mods_check_copy = mods_check.copy()
-        mods_to_reload = []
-        for mod_name in mods_to_unload:
-            for loaded_mod in mods_check:
-                if (mod_name in conflicts[loaded_mod]
-                    and loaded_mod not in mods_to_reload):
-                    mods_to_reload.append(loaded_mod)
-                    mods_check_copy.remove(loaded_mod)
-        mods_to_load.extend(mods_to_reload)
-        mods_to_unload.extend(mods_to_reload)
-        mods_check = mods_check_copy
-
-        # 4. Check for modules that have to be reloaded due to dependency on
-        # mods_to_load recursively.
-        for mod_name in mods_to_load:
-            for loaded_mod in mods_check:
-                if (mod_name in dependencies[loaded_mod]
-                    and loaded_mod not in mods_to_load):
-                    mods_to_load.append(loaded_mod)
-                    mods_to_unload.append(loaded_mod)
 
         return set(mods_to_unload), set(mods_to_load)
 
@@ -272,13 +257,6 @@ class ModManager(object):
            will be unloaded.
         2. Unusable modules due to dependency on mods_to_unload are added to
            mods_to_unload recursively.
-        3. Modules that have to be reloaded due to conflicts with mods_to_unload
-           are added to both lists.
-        4. Modules that have to be reloaded due to dependencies on mods_to_load
-           are added to both lists recursively.
-
-        Step 2-4 are identical to that in the 'auto_adjust_load' method. For the
-        same reason test carefully if you change this piece of code.
 
         :param mods_to_unload: list of strings, names of the modules to unload
         :param mods_to_load: list or strings, names of the modules to load
@@ -289,6 +267,8 @@ class ModManager(object):
         # conflicts.
         mods_loaded = set(mods_loaded)
         mods_check = mods_loaded.difference(set(mods_to_unload))
+
+        # Get the dependencies and conflicting modules of mods_check.
         dependencies = dict()
         conflicts = dict()
         for loaded_mod in mods_check:
@@ -317,30 +297,6 @@ class ModManager(object):
                     and loaded_mod not in mods_to_unload):
                     mods_to_unload.append(loaded_mod)
                     mods_check_copy.remove(loaded_mod)
-        mods_check = mods_check_copy
-
-        # 3. Check for modules that have to be reloaded due to conflicts on
-        # mods_to_unload.
-        mods_check_copy = mods_check.copy()
-        mods_to_reload = []
-        for mod_name in mods_to_unload:
-            for loaded_mod in mods_check:
-                if (mod_name in conflicts[loaded_mod]
-                    and loaded_mod not in mods_to_reload):
-                    mods_to_reload.append(loaded_mod)
-                    mods_check_copy.remove(loaded_mod)
-        mods_to_load.extend(mods_to_reload)
-        mods_to_unload.extend(mods_to_reload)
-        mods_check = mods_check_copy
-
-        # 4. Check for modules that have to be reloaded due to dependency on
-        # mods_to_load recursively.
-        for mod_name in mods_to_load:
-            for loaded_mod in mods_check:
-                if (mod_name in dependencies[loaded_mod]
-                    and loaded_mod not in mods_to_load):
-                    mods_to_load.append(loaded_mod)
-                    mods_to_unload.append(loaded_mod)
 
         return set(mods_to_unload), set(mods_to_load)
 
@@ -384,8 +340,7 @@ class ModManager(object):
 
     def print_mods_info(self, mod_list):
         """
-        Print the dependencies and conflicting modules of given modules in
-        mod_list.
+        Print the configurations of given modules in mod_list.
 
         :param mod_list: list of module names
         :return: None

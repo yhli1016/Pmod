@@ -15,7 +15,7 @@ args = parser.parse_args()
 mod_manager.check_sanity()
 if args.operation in ("info", "show", "display", "diagnose", "probe",
                       "load", "add", "unload", "remove", "rm", "delete", "del"):
-    mod_name = mod_manager.check_mod_names(args.mod_name)
+    mod_name = mod_manager.verify_mod_names(args.mod_name)
 else:
     mod_name = args.mod_name
 

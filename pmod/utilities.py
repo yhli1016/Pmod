@@ -18,9 +18,9 @@ def print_stdout(command):
 def print_stderr(message):
     """
     Print message to stderr, which WILL NOT be interpreted by shell.
-    This function is also used to print banners and tables.
+    This function is also utilized to print banners and tables.
 
-    :param message: string, error message
+    :param message: string, message to write to stderr
     :return: None
     """
     sys.stderr.write("%s\n" % message)
@@ -63,8 +63,8 @@ def split_list(raw_list, num_group, algorithm="remainder"):
 
 def get_terminal_size():
     """
-    Get the current size of the terminal in characters. We cannot use
-    os.get_terminal_size() as it is supported only in Python 3.
+    Get the current size of the terminal in characters. We do not use
+    os.get_terminal_size() as it is available only in Python 3.
 
     :return: (integer, integer), size of the terminal
     """

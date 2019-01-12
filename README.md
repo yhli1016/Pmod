@@ -124,18 +124,14 @@ targets:
 2. Conflicting modules of the targets are unloaded.
 3. Unusable modules due to conflicts with modules to load are unloaded.
 4. Unusable modules due to dependency on modules to unload are unloaded.
-5. Modules that have conflicts with modules to unload are reloaded.
-6. Modules that have dependencies on modules to load are reloaded.
 
 When unloading specified targets, the following operations are triggered:
 
 1. Prerequisites of the targets that are not required by any loaded modules are
    unloaded.
 2. Unusable modules due to dependency on modules to unload are unloaded.
-3. Modules that have conflicts with modules to unload are reloaded.
-4. Modules that have dependencies on modules to load are reloaded.
 
-The automatically mode are enabled by default. Append '-f' or '--force_no_auto'
+The automatically mode are enabled by default. Append '-f' or '--force\_no\_auto'
 to the command-line parameters if you don't like this feature. Keep in mind
 that the loaded modules may be not usable as it seems to be in this case.
 
@@ -173,7 +169,7 @@ A: Define it as a void module and add all the modules to load as dependencies.
     ?**
 
 A: Derive your own class from the base *Module* class and override appropriate
-   methods. Then pass the derived class as the mod\_class keyword argument to
+   methods. Then pass the derived class as the *mod\_class* keyword argument to
    the *create_mod* function calls in modulefiles/setup.py. You are recommended
    to put the class definition files in the same place as setup.py. An example
    is given in examples/custom.

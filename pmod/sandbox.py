@@ -9,7 +9,11 @@ class SandBox(object):
 
     self.environ is a copy of os.environ, but has all the elements split by ":".
 
-    self.env_name_changed
+    self.env_name_changed records the environmental variables modifed by the
+    modules to load or unload.
+
+    self.command, self.alias and self.unalias records the command and alias of
+    each module.
     """
     def __init__(self):
         self.environ = dict()
