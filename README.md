@@ -79,11 +79,9 @@ files on our servers are provided in the *examples* directory.
 
 Usage
 -----
-The common usage of pmod is "pmod [-a] [-f] operation [mod\_name...]". '-a'
-enables automatic mode. -f forces to disable this mode regardless of the '-a'
-parameter or the PM\_AUTO_\MODE environmental variable. More details about the
-automatic mode will be given in the next section. For now the implemented
-operations are:
+The common usage of pmod is "pmod [-f] operation [mod\_name...]". -f forces to
+disables automatic mode,  More details about the automatic mode will be given in
+the next section. For now the implemented operations are:
 
 - avail, av: list all available modules
 
@@ -137,10 +135,8 @@ When unloading specified targets, the following operations are triggered:
 3. Modules that have conflicts with modules to unload are reloaded.
 4. Modules that have dependencies on modules to load are reloaded.
 
-The automatically mode are enabled by either appending '-a' or '--auto' to the
-command-line parameters, or setting the PM\_AUTO\_MODE environmental variable to
-1 in init/bash.sh. By default it is enabled. Set PM\_AUTO\_MODE to 0 or append
-'-f' to the command-line parameters if you don't like this feature. Keep in mind
+The automatically mode are enabled by default. Append '-f' or '--force_no_auto'
+to the command-line parameters if you don't like this feature. Keep in mind
 that the loaded modules may be not usable as it seems to be in this case.
 
 

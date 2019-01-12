@@ -494,17 +494,15 @@ class ModManager(object):
             except re.error:
                 print_stderr("Invalid regular expression %s" % pattern)
 
-    def load_mods(self, mod_list, force_no_auto=False, auto=False):
+    def load_mods(self, mod_list, force_no_auto=False):
         """
         Load a list of modules.
 
         :param mod_list: list of the names of modules
-        :param force_no_auto: boolean, whether to force to disable auto mode,
-                              overwrites auto and PM_AUTO_MODE
-        :param auto: boolean, whether to enable auto mode
+        :param force_no_auto: boolean, whether to force to disable auto mode
         :return: None
         """
-        if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
+        if force_no_auto:
             mods_to_load = set([mod_name for mod_name in mod_list
                         if self.available_mods[mod_name].check_status() != 1])
             mods_to_unload = set()
@@ -555,17 +553,15 @@ class ModManager(object):
             self.available_mods[mod_name].load(sandbox)
         sandbox.echo_commands()
 
-    def unload_mods(self, mod_list, force_no_auto=False, auto=False):
+    def unload_mods(self, mod_list, force_no_auto=False):
         """
         Unload specified list of modules with their dependencies that are not.
 
         :param mod_list: list of the names of modules
-        :param force_no_auto: boolean, whether to force to disable auto mode,
-                              overwrites auto and PM_AUTO_MODE
-        :param auto: boolean, whether to enable auto mode
+        :param force_no_auto: boolean, whether to force to disable auto mode
         :return: None
         """
-        if force_no_auto or (not auto and os.environ['PM_AUTO_MODE'] != "1"):
+        if force_no_auto:
             mods_to_unload = set([mod_name for mod_name in mod_list
                         if self.available_mods[mod_name].check_status() != -1])
             mods_to_load = set()
