@@ -122,14 +122,19 @@ targets:
 
 1. Prerequisites of the targets are loaded.
 2. Conflicting modules of the targets are unloaded.
-3. Unusable modules due to conflicts with modules to load are unloaded.
-4. Unusable modules due to dependency on modules to unload are unloaded.
+3. Unusable modules whose dependencies have been unloaded or conflicting modules
+   loaded will be removed.
+4. Modules whose dependencies have been (re)loaded or conflicting modules
+   unloaded will be reloaded.
 
 When unloading specified targets, the following operations are triggered:
 
 1. Prerequisites of the targets that are not required by any loaded modules are
    unloaded.
-2. Unusable modules due to dependency on modules to unload are unloaded.
+2. Unusable modules whose dependencies have been unloaded or conflicting modules
+   loaded will be removed.
+3. Modules whose dependencies have been (re)loaded or conflicting modules
+   unloaded will be reloaded.
 
 The automatically mode are enabled by default. Append '-f' or '--force\_no\_auto'
 to the command-line parameters if you don't like this feature. Keep in mind

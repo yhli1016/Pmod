@@ -192,16 +192,10 @@ class ModManager(object):
         already loaded modules when loading specified targets in automatic mode.
         The following operations are performed:
 
-        1. Unusable modules due to conflicts with mods_to_load are added to
-           mods_to_unload.
-        2. Unusable modules due to dependency on mods_to_unload are added to
-           mods_to_unload recursively.
-
-        This piece of code may be the most complicated and bug-prone part of
-        this software. So TEST CAREFULLY if you made any changes. Knowing
-        exactly what you are doing is not enough, as programs often (always) do
-        not work as you expect. In particular, DO NOT change the order of steps
-        1-2 as they do not commute.
+        1. Unusable modules whose dependencies have been unloaded or conflicting
+           modules loaded will be removed.
+        2. Modules whose dependencies have been (re)loaded or conflicting
+           modules unloaded will be reloaded.
 
         :param mods_to_unload: list of strings, names of the modules to unload
         :param mods_to_load: list or strings, names of the modules to load
@@ -212,37 +206,32 @@ class ModManager(object):
         # usability.
         mods_loaded = set(mods_loaded)
         mods_loaded_copy = mods_loaded.copy()
-        mods_loaded_copy = mods_loaded_copy.difference(set(mods_to_unload))
-        mods_loaded_copy = mods_loaded_copy.union(set(mods_to_load))
+        mods_loaded_copy = mods_loaded_copy.difference(mods_to_unload)
+        mods_loaded_copy = mods_loaded_copy.union(mods_to_load)
         mods_check = mods_loaded.intersection(mods_loaded_copy)
 
-        # Get the dependencies and conflicting modules of mods_check.
-        dependencies = dict()
-        conflicts = dict()
-        for loaded_mod in mods_check:
-            dependencies[loaded_mod] = self.build_dependencies([loaded_mod])
-            conflicts[loaded_mod] = self.build_conflicts(
-                                    dependencies[loaded_mod])
-
-        # 1. Check for unusable modules due to conflicts with mods_to_load.
+        # Check for unusable modules.
         mods_check_copy = mods_check.copy()
-        for mod_name in mods_to_load:
-            for loaded_mod in mods_check:
-                if (mod_name in conflicts[loaded_mod]
-                    and loaded_mod not in mods_to_unload):
-                    mods_to_unload.append(loaded_mod)
-                    mods_check_copy.remove(loaded_mod)
+        for loaded_mod in mods_check:
+            dependencies = self.build_dependencies([loaded_mod])
+            conflicts = self.build_conflicts(dependencies)
+            if (len(dependencies.intersection(mods_to_unload)) != 0 or
+                len(conflicts.intersection(mods_to_load)) != 0):
+                mods_to_unload.append(loaded_mod)
+                mods_check_copy.remove(loaded_mod)
         mods_check = mods_check_copy
 
-        # 2. Check for unusable modules due to dependency on mods_to_unload
-        # recursively.
-        mods_check_copy = mods_check.copy()
-        for mod_name in mods_to_unload:
-            for loaded_mod in mods_check:
-                if (mod_name in dependencies[loaded_mod]
-                    and loaded_mod not in mods_to_unload):
-                    mods_to_unload.append(loaded_mod)
-                    mods_check_copy.remove(loaded_mod)
+        # Check for modules that have to be reloaded.
+        mods_to_reload = []
+        for loaded_mod in mods_check:
+            dependencies = self.build_dependencies([loaded_mod])
+            conflicts = self.build_conflicts(dependencies)
+            if (len(dependencies.intersection(mods_to_load)) != 0 or
+                len(dependencies.intersection(mods_to_reload)) != 0 or
+                len(conflicts.intersection(mods_to_unload)) != 0):
+                mods_to_reload.append(loaded_mod)
+        mods_to_unload.extend(mods_to_reload)
+        mods_to_load.extend(mods_to_reload)
 
         return set(mods_to_unload), set(mods_to_load)
 
@@ -255,48 +244,54 @@ class ModManager(object):
         1. Modules that are still required by other loaded modules are excluded
            from mods_to_unload. If all the modules are required, then nothing
            will be unloaded.
-        2. Unusable modules due to dependency on mods_to_unload are added to
-           mods_to_unload recursively.
+        2. Unusable modules whose dependencies have been unloaded or conflicting
+           modules loaded will be removed.
+        3. Modules whose dependencies have been (re)loaded or conflicting
+           modules unloaded will be reloaded.
 
         :param mods_to_unload: list of strings, names of the modules to unload
         :param mods_to_load: list or strings, names of the modules to load
         :param mods_loaded: list of strings, names of loaded modules
         :return: adjusted mods_to_unload and mods_to_load
         """
-        # Get the loaded modules to be checked and their dependencies and
-        # conflicts.
+        # Get the loaded modules to be checked for usability.
         mods_loaded = set(mods_loaded)
         mods_check = mods_loaded.difference(set(mods_to_unload))
 
-        # Get the dependencies and conflicting modules of mods_check.
-        dependencies = dict()
-        conflicts = dict()
-        for loaded_mod in mods_check:
-            dependencies[loaded_mod] = self.build_dependencies([loaded_mod])
-            conflicts[loaded_mod] = self.build_conflicts(
-                                    dependencies[loaded_mod])
-
-        # 1. Check for modules in mods_to_unload that are still required by
+        # Check for modules in mods_to_unload that are still required by
         # modules in mods_check.
         mods_in_use = set()
         for mod_name in mods_to_unload:
             in_use = False
             for loaded_mod in mods_check:
-                if mod_name in dependencies[loaded_mod]:
+                if mod_name in self.build_dependencies([loaded_mod]):
                     in_use = True
             if in_use:
                 mods_in_use.add(mod_name)
         mods_to_unload = list(set(mods_to_unload).difference(mods_in_use))
 
-        # 2. Check for unusable modules due to dependency on mods_to_unload
-        # recursively.
+        # Check for unusable modules.
         mods_check_copy = mods_check.copy()
-        for mod_name in mods_to_unload:
-            for loaded_mod in mods_check:
-                if (mod_name in dependencies[loaded_mod]
-                    and loaded_mod not in mods_to_unload):
-                    mods_to_unload.append(loaded_mod)
-                    mods_check_copy.remove(loaded_mod)
+        for loaded_mod in mods_check:
+            dependencies = self.build_dependencies([loaded_mod])
+            conflicts = self.build_conflicts(dependencies)
+            if (len(dependencies.intersection(mods_to_unload)) != 0 or
+                len(conflicts.intersection(mods_to_load)) != 0):
+                mods_to_unload.append(loaded_mod)
+                mods_check_copy.remove(loaded_mod)
+        mods_check = mods_check_copy
+
+        # Check for modules that have to be reloaded.
+        mods_to_reload = []
+        for loaded_mod in mods_check:
+            dependencies = self.build_dependencies([loaded_mod])
+            conflicts = self.build_conflicts(dependencies)
+            if (len(dependencies.intersection(mods_to_load)) != 0 or
+                len(dependencies.intersection(mods_to_reload)) != 0 or
+                len(conflicts.intersection(mods_to_unload)) != 0):
+                mods_to_reload.append(loaded_mod)
+        mods_to_unload.extend(mods_to_reload)
+        mods_to_load.extend(mods_to_reload)
 
         return set(mods_to_unload), set(mods_to_load)
 
