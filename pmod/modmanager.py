@@ -256,7 +256,7 @@ class ModManager(object):
         """
         # Get the loaded modules to be checked for usability.
         mods_loaded = set(mods_loaded)
-        mods_check = mods_loaded.difference(set(mods_to_unload))
+        mods_check = mods_loaded.difference(mods_to_unload)
 
         # Check for modules in mods_to_unload that are still required by
         # modules in mods_check.
